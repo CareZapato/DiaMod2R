@@ -9,6 +9,26 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => {
   const { selectedMod, isModSelected } = useModContext();
 
+  const openModFolder = async (folderPath: string) => {
+    try {
+      // Crear endpoint para abrir carpeta
+      const response = await fetch('http://localhost:3001/api/system/open-folder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ path: folderPath })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error abriendo carpeta');
+      }
+    } catch (error) {
+      console.error('Error abriendo carpeta:', error);
+      alert('Error al abrir la carpeta del mod');
+    }
+  };
+
   const menuItems = [
     {
       id: 'mod-selection',
@@ -79,7 +99,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => 
         <div className="selected-mod-info">
           <div className="mod-badge">
             <span className="mod-label">Mod Actual:</span>
-            <span className="mod-name">{selectedMod.name}</span>
+            <div className="mod-name-container">
+              <span className="mod-name">{selectedMod.name}</span>
+              <button
+                className="folder-button"
+                onClick={() => openModFolder(selectedMod.folderPath)}
+                title="Abrir carpeta del mod en el explorador"
+              >
+                📁
+              </button>
+            </div>
           </div>
         </div>
       )}

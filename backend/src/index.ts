@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { AppDataSource } from './data-source';
 import modRoutes from './routes/modRoutes';
+import systemRoutes from './routes/systemRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -13,6 +14,7 @@ app.use(express.json());
 
 // Rutas
 app.use('/api/mods', modRoutes);
+app.use('/api/system', systemRoutes);
 
 // Ruta de health check
 app.get('/health', (req, res) => {

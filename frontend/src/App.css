@@ -128,6 +128,30 @@ body {
   font-size: 1rem;
 }
 
+.mod-name-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.folder-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 4px 8px;
+  transition: var(--transition);
+  backdrop-filter: blur(10px);
+}
+
+.folder-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
 /* Navegación */
 .sidebar-nav {
   padding: 20px 0;

@@ -231,9 +231,14 @@ export class FileService {
       // Agregar header con nombres de columnas
       content += columns.join('\t') + '\n';
       
-      // Separar héroes clásicos y de expansión
-      const classicHeroes = charStats.filter(hero => !hero.expansion);
-      const expansionHeroes = charStats.filter(hero => hero.expansion);
+      // Separar héroes clásicos y de expansión, manteniendo el orden original por ID
+      const classicHeroes = charStats
+        .filter(hero => !hero.expansion)
+        .sort((a, b) => a.id - b.id); // Ordenar por ID para mantener orden original
+      
+      const expansionHeroes = charStats
+        .filter(hero => hero.expansion)
+        .sort((a, b) => a.id - b.id); // Ordenar por ID para mantener orden original
       
       // Función para convertir un CharStat a línea de texto
       const charStatToLine = (charStat: CharStat): string => {

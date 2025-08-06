@@ -64,14 +64,28 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({ charStats, onCharStatUpdate
     }));
   };
 
+  const getStatLimits = (field: string): { min: number; max: number } => {
+    // Stats principales con límites específicos
+    const mainStats = ['str', 'dex', 'int', 'vit'];
+    if (mainStats.includes(field)) {
+      return { min: 1, max: 270 };
+    }
+    // Otros stats con límites generales
+    return { min: 0, max: 9999 };
+  };
+
   const incrementStat = (field: string) => {
     const currentValue = editedStats[field as keyof CharStat] as number || (currentHero as any)[field] as number;
-    handleStatChange(field, currentValue + 1);
+    const limits = getStatLimits(field);
+    if (currentValue < limits.max) {
+      handleStatChange(field, currentValue + 1);
+    }
   };
 
   const decrementStat = (field: string) => {
     const currentValue = editedStats[field as keyof CharStat] as number || (currentHero as any)[field] as number;
-    if (currentValue > 0) {
+    const limits = getStatLimits(field);
+    if (currentValue > limits.min) {
       handleStatChange(field, currentValue - 1);
     }
   };
@@ -125,6 +139,7 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({ charStats, onCharStatUpdate
   const renderStatField = (label: string, field: string) => {
     const currentValue = getCurrentValue(field);
     const change = statChanges[field];
+    const limits = getStatLimits(field);
     
     return (
       <div className="stat-field" key={field}>
@@ -134,19 +149,27 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({ charStats, onCharStatUpdate
             type="button" 
             onClick={() => decrementStat(field)}
             className="stat-button minus"
+            disabled={currentValue <= limits.min}
           >
             -
           </button>
           <input
             type="number"
             value={currentValue}
-            onChange={(e) => handleStatChange(field, parseInt(e.target.value) || 0)}
+            min={limits.min}
+            max={limits.max}
+            onChange={(e) => {
+              const value = parseInt(e.target.value) || limits.min;
+              const clampedValue = Math.max(limits.min, Math.min(limits.max, value));
+              handleStatChange(field, clampedValue);
+            }}
             className="stat-input"
           />
           <button 
             type="button" 
             onClick={() => incrementStat(field)}
             className="stat-button plus"
+            disabled={currentValue >= limits.max}
           >
             +
           </button>
