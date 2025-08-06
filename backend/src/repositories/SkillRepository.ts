@@ -14,7 +14,28 @@ export class SkillRepository {
   }
 
   async saveMany(skills: Skill[]): Promise<Skill[]> {
-    return await this.repository.save(skills);
+    // PostgreSQL tiene límite de parámetros por consulta (~65k)
+    // Con 295 columnas por skill, limitamos a 50 skills por lote para estar seguros
+    const BATCH_SIZE = 50;
+    const savedSkills: Skill[] = [];
+
+    console.log(`💾 Guardando ${skills.length} skills en lotes de ${BATCH_SIZE}...`);
+
+    for (let i = 0; i < skills.length; i += BATCH_SIZE) {
+      const batch = skills.slice(i, i + BATCH_SIZE);
+      console.log(`📦 Procesando lote ${Math.floor(i/BATCH_SIZE) + 1}/${Math.ceil(skills.length/BATCH_SIZE)} (${batch.length} skills)`);
+      
+      try {
+        const batchResult = await this.repository.save(batch);
+        savedSkills.push(...batchResult);
+      } catch (error) {
+        console.error(`❌ Error guardando lote ${Math.floor(i/BATCH_SIZE) + 1}:`, error);
+        throw error;
+      }
+    }
+
+    console.log(`✅ Todas las skills guardadas exitosamente: ${savedSkills.length} registros`);
+    return savedSkills;
   }
 
   async findAll(): Promise<Skill[]> {
@@ -36,6 +57,13 @@ export class SkillRepository {
       relations: ['mod'],
       order: { id: 'ASC' } // Mantener orden original
     });
+  }
+
+  async findBySkillName(skillName: string): Promise<Skill | null> {
+    return await this.repository
+      .createQueryBuilder('skill')
+      .where('LOWER(skill.skill) = LOWER(:skillName)', { skillName })
+      .getOne();
   }
 
   async deleteByModId(modId: number): Promise<void> {

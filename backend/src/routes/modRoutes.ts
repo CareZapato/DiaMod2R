@@ -22,6 +22,7 @@ router.post('/process', async (req: Request, res: Response) => {
         mod: result.mod,
         filesFound: result.files.length,
         charStatsProcessed: result.charStats.length,
+        skillsProcessed: result.skills.length,
         files: result.files.map(f => f.name)
       }
     });
@@ -94,6 +95,28 @@ router.get('/:id/charstats', async (req: Request, res: Response) => {
     console.error('Error en /api/mods/:id/charstats:', error);
     res.status(500).json({ 
       error: 'Error obteniendo charStats',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+// GET /api/mods/:id/skills - Obtener skills de un mod
+router.get('/:id/skills', async (req: Request, res: Response) => {
+  try {
+    const modId = parseInt(req.params.id);
+    if (isNaN(modId)) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
+
+    const skills = await modService.getSkillsByModId(modId);
+    res.json({
+      success: true,
+      data: skills
+    });
+  } catch (error) {
+    console.error('Error en /api/mods/:id/skills:', error);
+    res.status(500).json({ 
+      error: 'Error obteniendo skills',
       details: error instanceof Error ? error.message : 'Error desconocido'
     });
   }

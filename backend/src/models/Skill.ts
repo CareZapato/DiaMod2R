@@ -13,10 +13,6 @@ export class Skill {
   @Column({ name: 'mod_id' })
   modId!: number;
 
-  // Expansion flag (like CharStat)
-  @Column({ default: false })
-  expansion!: boolean;
-
   // Todas las columnas del archivo skills.txt (290 columnas)
   // Las columnas con * se nombran con prefijo star_ para PostgreSQL
   

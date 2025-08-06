@@ -21,9 +21,9 @@ export class ModService {
   }
 
   /**
-   * Procesa una carpeta de mod: la escanea, busca charstats.txt, y guarda en BD
+   * Procesa una carpeta de mod: la escanea, busca skills.txt y charstats.txt, y guarda en BD
    */
-  async processModFolder(modFolderPath: string): Promise<{ mod: Mod; files: FileInfo[]; charStats: CharStat[] }> {
+  async processModFolder(modFolderPath: string): Promise<{ mod: Mod; files: FileInfo[]; charStats: CharStat[]; skills: Skill[] }> {
     try {
       const modName = path.basename(modFolderPath);
       
@@ -34,8 +34,10 @@ export class ModService {
       const files = await this.fileService.scanModFolder(modFolderPath);
       console.log(`Archivos encontrados en ${modName}:`, files.map(f => f.name));
 
-      // 3. Buscar charstats.txt
+      // 3. Buscar archivos requeridos
+      const skillsFile = files.find(f => f.name.toLowerCase() === 'skills.txt');
       const charStatsFile = files.find(f => f.name.toLowerCase() === 'charstats.txt');
+      
       if (!charStatsFile) {
         throw new Error('No se encontró el archivo charstats.txt en la carpeta excel');
       }
@@ -49,26 +51,63 @@ export class ModService {
         console.log(`Mod "${modName}" guardado en la base de datos con ID: ${existingMod.id}`);
       } else {
         console.log(`Mod "${modName}" ya existe en la base de datos con ID: ${existingMod.id}`);
-        // Eliminar charStats existentes para reemplazarlos
+        // Eliminar datos existentes para reemplazarlos
         await this.charStatRepository.deleteByModId(existingMod.id);
+        await this.skillRepository.deleteByModId(existingMod.id);
       }
 
-      // 5. Parsear charstats.txt
+      // 5. Procesar skills.txt PRIMERO (si existe)
+      let skills: Skill[] = [];
+      let skillsMap = new Map<string, number>(); // Mapeo de *Id a skill.id de BD
+      
+      if (skillsFile) {
+        console.log('📖 Procesando skills.txt...');
+        skills = await this.fileService.parseSkillsFile(skillsFile.path);
+        
+        // Asociar skills con el mod y guardar en BD
+        skills.forEach(skill => {
+          skill.modId = existingMod!.id;
+          skill.mod = existingMod!;
+        });
+
+        const savedSkills = await this.skillRepository.saveMany(skills);
+        console.log(`✅ ${savedSkills.length} Skills guardadas en la base de datos para el mod "${modName}"`);
+        
+        // Crear mapeo de nombre de skill a ID de BD para usar en charstats
+        savedSkills.forEach(skill => {
+          skillsMap.set(skill.skill.toLowerCase(), skill.id);
+        });
+      } else {
+        console.log('⚠️ No se encontró skills.txt - continuando sin procesar skills');
+      }
+
+      // 6. Parsear charstats.txt
+      console.log('📖 Procesando charstats.txt...');
       const charStats = await this.fileService.parseCharStatsFile(charStatsFile.path);
       
-      // 6. Asociar charStats con el mod y guardar en BD
+      // 7. Asociar charStats con el mod y establecer skill_id si existe StartSkill
       charStats.forEach(cs => {
         cs.modId = existingMod!.id;
         cs.mod = existingMod!;
+        
+        // Si tiene StartSkill y existe en skills, asociar el skillId (comparación en minúsculas)
+        if (cs.StartSkill && skillsMap.has(cs.StartSkill.toLowerCase())) {
+          const skillId = skillsMap.get(cs.StartSkill.toLowerCase());
+          if (skillId !== undefined) {
+            cs.skillId = skillId;
+            console.log(`🔗 CharStat "${cs.class}" - StartSkill "${cs.StartSkill}" asociado con skillId: ${cs.skillId}`);
+          }
+        }
       });
 
       const savedCharStats = await this.charStatRepository.saveMany(charStats);
-      console.log(`${savedCharStats.length} CharStats guardados en la base de datos para el mod "${modName}"`);
+      console.log(`✅ ${savedCharStats.length} CharStats guardados en la base de datos para el mod "${modName}"`);
 
       return {
         mod: existingMod,
         files: files,
-        charStats: savedCharStats
+        charStats: savedCharStats,
+        skills: skills
       };
 
     } catch (error) {
@@ -96,6 +135,13 @@ export class ModService {
    */
   async getCharStatsByModId(modId: number): Promise<CharStat[]> {
     return await this.charStatRepository.findByModId(modId);
+  }
+
+  /**
+   * Obtiene las skills de un mod
+   */
+  async getSkillsByModId(modId: number): Promise<Skill[]> {
+    return await this.skillRepository.findByModId(modId);
   }
 
   /**

@@ -251,6 +251,21 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({ charStats, onCharStatUpdate
           </div>
           <h2>{currentHero.class}</h2>
           <span className="hero-type">{currentHero.expansion ? 'Expansión' : 'Clásico'}</span>
+          {currentHero.startSkillReference && (
+            <div className="hero-skill">
+              <span className="skill-label">Skill inicial:</span>
+              <span className="skill-name">{currentHero.startSkillReference.skill}</span>
+              {currentHero.startSkillReference.skilldesc && (
+                <span className="skill-desc">({currentHero.startSkillReference.skilldesc})</span>
+              )}
+            </div>
+          )}
+          {currentHero.StartSkill && !currentHero.startSkillReference && (
+            <div className="hero-skill">
+              <span className="skill-label">Skill inicial:</span>
+              <span className="skill-name">{currentHero.StartSkill}</span>
+            </div>
+          )}
           <span className="hero-counter">({currentHeroIndex + 1} de {charStats.length})</span>
         </div>
         

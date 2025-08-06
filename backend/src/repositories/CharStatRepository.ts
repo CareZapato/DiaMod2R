@@ -20,14 +20,14 @@ export class CharStatRepository {
   async findByModId(modId: number): Promise<CharStat[]> {
     return await this.repository.find({ 
       where: { modId },
-      relations: ['mod']
+      relations: ['mod', 'startSkillReference']
     });
   }
 
   async findById(id: number): Promise<CharStat | null> {
     return await this.repository.findOne({ 
       where: { id },
-      relations: ['mod']
+      relations: ['mod', 'startSkillReference']
     });
   }
 

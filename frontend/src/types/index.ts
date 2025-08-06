@@ -34,6 +34,8 @@ export interface CharStat {
   BlockFactor: number;
   MinimumCastingDelay: number;
   StartSkill: string;
+  skillId?: number; // ID de la skill inicial
+  startSkillReference?: Skill; // Relación con la skill
   Skill1: string;
   Skill2: string;
   Skill3: string;
@@ -101,6 +103,17 @@ export interface FileInfo {
   path: string;
 }
 
+export interface Skill {
+  id: number;
+  skill: string;
+  starId: string; // *Id del archivo
+  charclass: string;
+  skilldesc: string;
+  modId: number;
+  modName: string;
+  // Se pueden agregar más campos según necesidad
+}
+
 export interface ProcessModResponse {
   success: boolean;
   message?: string;
@@ -108,6 +121,7 @@ export interface ProcessModResponse {
     mod: Mod;
     filesFound: number;
     charStatsProcessed: number;
+    skillsProcessed: number;
     files: string[];
   };
   error?: string;

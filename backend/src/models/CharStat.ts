@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Mod } from './Mod';
+import { Skill } from './Skill';
 
 @Entity('charstats')
 export class CharStat {
@@ -80,6 +81,13 @@ export class CharStat {
 
   @Column({ nullable: true })
   StartSkill: string;
+
+  @ManyToOne(() => Skill, { eager: false, nullable: true })
+  @JoinColumn({ name: 'skill_id' })
+  startSkillReference?: Skill;
+
+  @Column({ name: 'skill_id', nullable: true })
+  skillId?: number;
 
   @Column({ nullable: true })
   Skill1: string;

@@ -184,6 +184,9 @@ const ModSelection: React.FC = () => {
                     <div className="detail-item">
                       <strong>CharStats procesados:</strong> {processingResult.data.charStatsProcessed}
                     </div>
+                    <div className="detail-item">
+                      <strong>Skills procesadas:</strong> {processingResult.data.skillsProcessed || 0}
+                    </div>
                   </div>
                 )}
               </div>
@@ -195,12 +198,18 @@ const ModSelection: React.FC = () => {
                     {processingResult.data.files.map((fileName, index) => (
                       <div 
                         key={index} 
-                        className={`file-badge ${fileName.toLowerCase() === 'charstats.txt' ? 'processed' : ''}`}
+                        className={`file-badge ${
+                          fileName.toLowerCase() === 'charstats.txt' || fileName.toLowerCase() === 'skills.txt' 
+                            ? 'processed' : ''
+                        }`}
                       >
                         <span className="file-icon">📄</span>
                         <span className="file-name">{fileName}</span>
                         {fileName.toLowerCase() === 'charstats.txt' && (
-                          <span className="processed-indicator">✅</span>
+                          <span className="processed-indicator">✅ CharStats</span>
+                        )}
+                        {fileName.toLowerCase() === 'skills.txt' && (
+                          <span className="processed-indicator">✅ Skills</span>
                         )}
                       </div>
                     ))}
