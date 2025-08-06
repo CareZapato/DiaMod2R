@@ -1,0 +1,47 @@
+{
+  "name": "diamod2r",
+  "version": "0.0.1",
+  "description": "Aplicación web para gestionar y editar estadísticas de personajes en mods de Diablo 2",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd backend && node dist/index.js",
+    "start:frontend": "cd frontend && npm start",
+    "build": "concurrently \"npm run build:backend\" \"npm run build:frontend\"",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm start",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "diablo2", 
+    "mod", 
+    "typescript", 
+    "react", 
+    "express", 
+    "character-stats", 
+    "gaming", 
+    "modding-tools",
+    "postgresql"
+  ],
+  "author": "DiaMod2R Development Team",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tu-usuario/DiaMod2R.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tu-usuario/DiaMod2R/issues"
+  },
+  "homepage": "https://github.com/tu-usuario/DiaMod2R#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
