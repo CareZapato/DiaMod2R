@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { Mod } from './models/Mod';
 import { CharStat } from './models/CharStat';
+import { Skill } from './models/Skill';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -11,7 +12,7 @@ export const AppDataSource = new DataSource({
   database: 'diamod2BD',
   synchronize: true, // Esto creará las tablas automáticamente
   logging: false,
-  entities: [Mod, CharStat],
+  entities: [Mod, CharStat, Skill],
   migrations: [],
   subscribers: [],
 });

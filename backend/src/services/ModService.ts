@@ -1,18 +1,22 @@
 import { ModRepository } from '../repositories/ModRepository';
 import { CharStatRepository } from '../repositories/CharStatRepository';
+import { SkillRepository } from '../repositories/SkillRepository';
 import { FileService, FileInfo } from './FileService';
 import { Mod } from '../models/Mod';
 import { CharStat } from '../models/CharStat';
+import { Skill } from '../models/Skill';
 import * as path from 'path';
 
 export class ModService {
   private modRepository: ModRepository;
   private charStatRepository: CharStatRepository;
+  private skillRepository: SkillRepository;
   private fileService: FileService;
 
   constructor() {
     this.modRepository = new ModRepository();
     this.charStatRepository = new CharStatRepository();
+    this.skillRepository = new SkillRepository();
     this.fileService = new FileService();
   }
 

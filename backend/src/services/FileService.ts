@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { CharStat } from '../models/CharStat';
+import { Skill } from '../models/Skill';
 import { Mod } from '../models/Mod';
 
 export interface FileInfo {
@@ -193,6 +194,77 @@ export class FileService {
       return charStats;
     } catch (error) {
       console.error('Error parseando archivo charstats.txt:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Lee y parsea el archivo skills.txt
+   */
+  async parseSkillsFile(filePath: string): Promise<Skill[]> {
+    try {
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      
+      if (lines.length === 0) {
+        throw new Error('El archivo skills.txt está vacío');
+      }
+
+      // La primera línea debería ser el header con los nombres de las columnas
+      const headers = lines[0].split('\t');
+      const skills: Skill[] = [];
+      let isExpansion = false;
+
+      console.log(`📋 Headers encontrados en skills.txt: ${headers.length} columnas`);
+
+      // Procesar cada línea después del header
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        
+        // Saltar líneas vacías
+        if (!line) {
+          continue;
+        }
+
+        // Dividir la línea por tabs
+        const values = line.split('\t');
+        
+        // Verificar si es la línea "Expansion" (primer campo = "Expansion")
+        if (values[0] && values[0].toLowerCase().trim() === 'expansion') {
+          isExpansion = true;
+          console.log('🔄 Detectada línea "Expansion" en skills.txt - Cambiando modo a expansion=true');
+          continue; // No guardar este registro, solo cambiar el flag
+        }
+        
+        // Verificar si la línea tiene el formato esperado
+        if (values.length < 10 || !values[0] || values[0] === '' || values[0].toLowerCase().includes('comment')) {
+          continue; // Saltar líneas informativas o incompletas
+        }
+
+        // Crear objeto Skill
+        const skill = new Skill();
+        
+        try {
+          // Mapear columnas básicas para que funcione (completaremos el mapeo después)
+          skill.skill = values[0] || '';
+          skill.starId = values[1] || '';
+          skill.charclass = values[2] || '';
+          skill.skilldesc = values[3] || '';
+          // Por ahora solo mapeo las primeras columnas esenciales
+          // El resto se completará en siguiente iteración
+          
+          skill.expansion = isExpansion;
+          skills.push(skill);
+        } catch (error) {
+          console.warn(`Error procesando línea ${i + 1} de skills.txt: ${line}`, error);
+          continue;
+        }
+      }
+
+      console.log(`Skills parseadas exitosamente: ${skills.length} registros`);
+      return skills;
+    } catch (error) {
+      console.error('Error parseando archivo skills.txt:', error);
       throw error;
     }
   }
