@@ -124,4 +124,30 @@ router.put('/charstats/:id', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/mods/:id/generate-modified-file - Generar archivo charstatsmod.txt
+router.post('/:id/generate-modified-file', async (req: Request, res: Response) => {
+  try {
+    const modId = parseInt(req.params.id);
+    if (isNaN(modId)) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
+
+    const filePath = await modService.generateModifiedCharStatsFile(modId);
+    
+    res.json({
+      success: true,
+      message: 'Archivo charstatsmod.txt generado exitosamente',
+      data: {
+        filePath
+      }
+    });
+  } catch (error) {
+    console.error('Error en /api/mods/:id/generate-modified-file:', error);
+    res.status(500).json({ 
+      error: 'Error generando archivo modificado',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
 export default router;

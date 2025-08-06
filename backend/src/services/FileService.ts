@@ -68,14 +68,20 @@ export class FileService {
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         
-        // Verificar si es la línea "Expansion"
-        if (line.toLowerCase() === 'expansion') {
-          isExpansion = true;
+        // Saltar líneas vacías
+        if (!line) {
           continue;
         }
 
         // Dividir la línea por tabs
         const values = line.split('\t');
+        
+        // Verificar si es la línea "Expansion" (primer campo = "Expansion")
+        if (values[0] && values[0].toLowerCase().trim() === 'expansion') {
+          isExpansion = true;
+          console.log('🔄 Detectada línea "Expansion" - Cambiando modo a expansion=true');
+          continue; // No guardar este registro, solo cambiar el flag
+        }
         
         // Verificar si la línea tiene el formato esperado (debe tener al menos algunas columnas básicas)
         if (values.length < 10 || !values[0] || values[0] === '' || values[0].toLowerCase().includes('comment')) {
@@ -187,6 +193,91 @@ export class FileService {
       return charStats;
     } catch (error) {
       console.error('Error parseando archivo charstats.txt:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Genera el archivo charstatsmod.txt con los cambios aplicados
+   */
+  async generateModifiedCharStatsFile(charStats: CharStat[], originalFilePath: string): Promise<string> {
+    try {
+      const modFilePath = path.join(path.dirname(originalFilePath), 'charstatsmod.txt');
+      
+      // Definir las columnas en el orden correcto (sin incluir 'expansion')
+      const columns = [
+        'class', 'str', 'dex', 'int', 'vit', 'stamina', 'hpadd', 'ManaRegen', 'ToHitFactor',
+        'WalkVelocity', 'RunVelocity', 'RunDrain', 'Comment', 'LifePerLevel', 'StaminaPerLevel',
+        'ManaPerLevel', 'LifePerVitality', 'StaminaPerVitality', 'ManaPerMagic', 'StatPerLevel',
+        'SkillsPerLevel', 'LightRadius', 'BlockFactor', 'MinimumCastingDelay', 'StartSkill',
+        'Skill1', 'Skill2', 'Skill3', 'Skill4', 'Skill5', 'Skill6', 'Skill7', 'Skill8',
+        'Skill9', 'Skill10', 'StrAllSkills', 'StrSkillTab1', 'StrSkillTab2', 'StrSkillTab3',
+        'StrClassOnly', 'HealthPotionPercent', 'ManaPotionPercent', 'baseWClass',
+        'item1', 'item1loc', 'item1count', 'item1quality',
+        'item2', 'item2loc', 'item2count', 'item2quality',
+        'item3', 'item3loc', 'item3count', 'item3quality',
+        'item4', 'item4loc', 'item4count', 'item4quality',
+        'item5', 'item5loc', 'item5count', 'item5quality',
+        'item6', 'item6loc', 'item6count', 'item6quality',
+        'item7', 'item7loc', 'item7count', 'item7quality',
+        'item8', 'item8loc', 'item8count', 'item8quality',
+        'item9', 'item9loc', 'item9count', 'item9quality',
+        'item10', 'item10loc', 'item10count', 'item10quality'
+      ];
+
+      // Crear el contenido del archivo
+      let content = '';
+      
+      // Agregar header con nombres de columnas
+      content += columns.join('\t') + '\n';
+      
+      // Separar héroes clásicos y de expansión
+      const classicHeroes = charStats.filter(hero => !hero.expansion);
+      const expansionHeroes = charStats.filter(hero => hero.expansion);
+      
+      // Función para convertir un CharStat a línea de texto
+      const charStatToLine = (charStat: CharStat): string => {
+        const values: string[] = [];
+        
+        for (const column of columns) {
+          const value = (charStat as any)[column];
+          if (typeof value === 'number') {
+            values.push(value.toString());
+          } else if (typeof value === 'string') {
+            values.push(value);
+          } else {
+            values.push('');
+          }
+        }
+        
+        return values.join('\t');
+      };
+      
+      // Agregar héroes clásicos
+      for (const hero of classicHeroes) {
+        content += charStatToLine(hero) + '\n';
+      }
+      
+      // Agregar línea "Expansion" si hay héroes de expansión
+      if (expansionHeroes.length > 0) {
+        const expansionLine = 'Expansion' + '\t'.repeat(columns.length - 1);
+        content += expansionLine + '\n';
+        
+        // Agregar héroes de expansión
+        for (const hero of expansionHeroes) {
+          content += charStatToLine(hero) + '\n';
+        }
+      }
+      
+      // Escribir el archivo
+      fs.writeFileSync(modFilePath, content, 'utf-8');
+      
+      console.log(`✅ Archivo charstatsmod.txt generado exitosamente en: ${modFilePath}`);
+      console.log(`📊 Estadísticas: ${classicHeroes.length} héroes clásicos, ${expansionHeroes.length} héroes de expansión`);
+      
+      return modFilePath;
+    } catch (error) {
+      console.error('❌ Error generando archivo charstatsmod.txt:', error);
       throw error;
     }
   }

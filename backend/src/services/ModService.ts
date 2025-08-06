@@ -108,4 +108,43 @@ export class ModService {
     
     return await this.charStatRepository.save(existingCharStat);
   }
+
+  /**
+   * Genera el archivo charstatsmod.txt con los cambios aplicados
+   */
+  async generateModifiedCharStatsFile(modId: number): Promise<string> {
+    try {
+      // 1. Obtener el mod y verificar que existe
+      const mod = await this.modRepository.findById(modId);
+      if (!mod) {
+        throw new Error(`Mod con ID ${modId} no encontrado`);
+      }
+
+      // 2. Obtener todos los charStats del mod
+      const charStats = await this.charStatRepository.findByModId(modId);
+      if (charStats.length === 0) {
+        throw new Error(`No se encontraron charStats para el mod ${mod.name}`);
+      }
+
+      // 3. Construir la ruta del archivo original charstats.txt
+      const modName = path.basename(mod.folderPath);
+      const originalFilePath = path.join(
+        mod.folderPath,
+        `${modName}.mpq`,
+        'data',
+        'global',
+        'excel',
+        'charstats.txt'
+      );
+
+      // 4. Generar el archivo modificado
+      const modFilePath = await this.fileService.generateModifiedCharStatsFile(charStats, originalFilePath);
+      
+      console.log(`✅ Archivo charstatsmod.txt generado para el mod "${mod.name}"`);
+      return modFilePath;
+    } catch (error) {
+      console.error('❌ Error en generateModifiedCharStatsFile:', error);
+      throw error;
+    }
+  }
 }

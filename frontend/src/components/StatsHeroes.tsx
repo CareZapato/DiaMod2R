@@ -95,10 +95,36 @@ const StatsHeroes: React.FC = () => {
         )}
 
         {!loading && charStats.length > 0 && (
-          <HeroCarousel 
-            charStats={charStats}
-            onCharStatUpdate={handleCharStatUpdate}
-          />
+          <>
+            <div className="stats-summary">
+              <div className="summary-card">
+                <div className="summary-icon">🏆</div>
+                <div className="summary-info">
+                  <div className="summary-number">{charStats.length}</div>
+                  <div className="summary-label">Total Héroes</div>
+                </div>
+              </div>
+              <div className="summary-card">
+                <div className="summary-icon">⚡</div>
+                <div className="summary-info">
+                  <div className="summary-number">{charStats.filter(cs => cs.expansion).length}</div>
+                  <div className="summary-label">Héroes Expansión</div>
+                </div>
+              </div>
+              <div className="summary-card">
+                <div className="summary-icon">🛡️</div>
+                <div className="summary-info">
+                  <div className="summary-number">{charStats.filter(cs => !cs.expansion).length}</div>
+                  <div className="summary-label">Héroes Clásicos</div>
+                </div>
+              </div>
+            </div>
+
+            <HeroCarousel 
+              charStats={charStats}
+              onCharStatUpdate={handleCharStatUpdate}
+            />
+          </>
         )}
       </div>
     </MainLayout>

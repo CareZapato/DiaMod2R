@@ -960,9 +960,33 @@ body {
   backdrop-filter: blur(10px);
 }
 
+.nav-button.minimal {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1.2rem;
+  transition: var(--transition);
+  backdrop-filter: blur(10px);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .nav-button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.3);
   transform: translateY(-1px);
+}
+
+.nav-button.minimal:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px) scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .nav-button:disabled {
@@ -974,6 +998,31 @@ body {
   text-align: center;
   flex: 1;
   margin: 0 24px;
+}
+
+.hero-portrait {
+  margin-bottom: 12px;
+}
+
+.character-icon {
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+  transition: var(--transition);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.character-icon:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
 }
 
 .hero-info h2 {
@@ -1127,16 +1176,24 @@ body {
   border-radius: var(--border-radius);
   min-width: 50px;
   text-align: center;
+  width: 50px; /* Ancho fijo para mantener espacio estático */
+  display: inline-block; /* Asegurar que siempre ocupe espacio */
+}
+
+.stat-change.hidden {
+  visibility: hidden; /* Invisible pero ocupa espacio */
 }
 
 .stat-change.positive {
   background: rgba(56, 161, 105, 0.1);
   color: var(--success-color);
+  visibility: visible;
 }
 
 .stat-change.negative {
   background: rgba(229, 62, 62, 0.1);
   color: var(--error-color);
+  visibility: visible;
 }
 
 /* Action Buttons */

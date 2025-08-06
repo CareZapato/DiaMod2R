@@ -84,17 +84,30 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({ charStats, onCharStatUpdate
 
     setIsLoading(true);
     try {
-      const response = await axios.put(`http://localhost:3001/api/mods/charstats/${currentHero.id}`, editedStats);
+      // 1. Guardar cambios en la base de datos
+      const updateResponse = await axios.put(`http://localhost:3001/api/mods/charstats/${currentHero.id}`, editedStats);
       
-      if (response.data.success) {
-        onCharStatUpdate(response.data.data);
-        setEditedStats({});
-        setStatChanges({});
-        alert('Cambios guardados exitosamente');
+      if (updateResponse.data.success) {
+        onCharStatUpdate(updateResponse.data.data);
+        
+        // 2. Generar archivo modificado charstatsmod.txt
+        const generateResponse = await axios.post(`http://localhost:3001/api/mods/${currentHero.modId}/generate-modified-file`);
+        
+        if (generateResponse.data.success) {
+          setEditedStats({});
+          setStatChanges({});
+          alert(`Cambios guardados exitosamente.\nArchivo generado en: ${generateResponse.data.data.filePath}`);
+        } else {
+          alert('Cambios guardados, pero hubo un error generando el archivo modificado.');
+        }
       }
     } catch (error) {
       console.error('Error guardando cambios:', error);
-      alert('Error al guardar los cambios');
+      if (axios.isAxiosError(error) && error.response) {
+        alert(`Error al guardar los cambios: ${error.response.data.details || error.response.data.error}`);
+      } else {
+        alert('Error al guardar los cambios');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -137,11 +150,9 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({ charStats, onCharStatUpdate
           >
             +
           </button>
-          {change && (
-            <span className={`stat-change ${change.difference >= 0 ? 'positive' : 'negative'}`}>
-              {change.difference >= 0 ? '+' : ''}{change.difference}
-            </span>
-          )}
+          <span className={`stat-change ${change ? (change.difference >= 0 ? 'positive' : 'negative') : 'hidden'}`}>
+            {change ? (change.difference >= 0 ? '+' : '') + change.difference : ''}
+          </span>
         </div>
       </div>
     );
@@ -150,6 +161,20 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({ charStats, onCharStatUpdate
   if (!currentHero) {
     return <div>No hay héroes para mostrar</div>;
   }
+
+  // Function to get character icon based on class
+  const getCharacterIcon = (className: string): string => {
+    const icons: { [key: string]: string } = {
+      'Amazon': '🏹',
+      'Sorceress': '🔮',
+      'Necromancer': '💀',
+      'Paladin': '⚔️',
+      'Barbarian': '🪓',
+      'Druid': '🌿',
+      'Assassin': '🗡️'
+    };
+    return icons[className] || '🛡️';
+  };
 
   const numericStats = [
     { label: 'Fuerza', field: 'str' },
@@ -189,12 +214,18 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({ charStats, onCharStatUpdate
         <button 
           onClick={prevHero} 
           disabled={currentHeroIndex === 0}
-          className="nav-button prev"
+          className="nav-button prev minimal"
+          title="Héroe anterior"
         >
-          ← Anterior
+          ◀
         </button>
         
         <div className="hero-info">
+          <div className="hero-portrait">
+            <div className="character-icon" title={currentHero.class}>
+              {getCharacterIcon(currentHero.class)}
+            </div>
+          </div>
           <h2>{currentHero.class}</h2>
           <span className="hero-type">{currentHero.expansion ? 'Expansión' : 'Clásico'}</span>
           <span className="hero-counter">({currentHeroIndex + 1} de {charStats.length})</span>
@@ -203,9 +234,10 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({ charStats, onCharStatUpdate
         <button 
           onClick={nextHero} 
           disabled={currentHeroIndex === charStats.length - 1}
-          className="nav-button next"
+          className="nav-button next minimal"
+          title="Siguiente héroe"
         >
-          Siguiente →
+          ▶
         </button>
       </div>
 
