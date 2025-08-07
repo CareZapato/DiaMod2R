@@ -216,12 +216,23 @@
   padding: 15px;
   transition: all 0.3s ease;
   cursor: pointer;
+  user-select: none;
 }
 
 .skill-card:hover {
   border-color: #d4af37;
   box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
   transform: translateY(-2px);
+}
+
+.skill-card.editing {
+  border-color: #28a745;
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+  cursor: default;
+}
+
+.skill-card.editing:hover {
+  transform: none;
 }
 
 .skill-header {
@@ -315,11 +326,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.increment-button {
+  user-select: none;
+}
+
+.increment-button:active {
+  background: #666 !important;
+  transform: scale(0.95);
 }
 
 .value-editor button:hover:not(:disabled) {
   background: #555;
   border-color: #d4af37;
+  transform: scale(1.05);
 }
 
 .value-editor button:disabled {

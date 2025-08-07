@@ -20,16 +20,27 @@ interface SkillChange {
   newValue: number;
 }
 
+interface OriginalSkillValues {
+  [skillId: number]: {
+    reqlevel: number;
+    maxlvl: number;
+  };
+}
+
 export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [filteredSkills, setFilteredSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingSkills, setEditingSkills] = useState<{ [skillId: number]: SkillEdit }>({});
+  const [originalSkillValues, setOriginalSkillValues] = useState<OriginalSkillValues>({});
   const [savingSkills, setSavingSkills] = useState<Set<number>>(new Set());
   const [generatingFile, setGeneratingFile] = useState(false);
   const [skillChanges, setSkillChanges] = useState<SkillChange[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
+  // Para el incremento rápido con botones mantenidos
+  const [incrementIntervals, setIncrementIntervals] = useState<{ [key: string]: NodeJS.Timeout }>({});
   
   // Filtros
   const [selectedMod, setSelectedMod] = useState<number | ''>('');
@@ -55,12 +66,47 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
     applyFilters();
   }, [skills, selectedMod, selectedCharClass, searchTerm]);
 
+  // Limpiar intervalos al desmontar el componente
+  useEffect(() => {
+    return () => {
+      Object.values(incrementIntervals).forEach(interval => {
+        clearTimeout(interval);
+      });
+    };
+  }, [incrementIntervals]);
+
+  // Establecer mod por defecto si solo hay uno, o si todos los skills son del mismo mod
+  useEffect(() => {
+    if (skills.length > 0 && selectedMod === '') {
+      // Si solo hay un mod disponible, seleccionarlo automáticamente
+      if (mods.length === 1) {
+        setSelectedMod(mods[0].id);
+      } else {
+        // Si todos los skills cargados son del mismo mod, seleccionarlo
+        const uniqueModIds = Array.from(new Set(skills.map(skill => skill.modId)));
+        if (uniqueModIds.length === 1) {
+          setSelectedMod(uniqueModIds[0]);
+        }
+      }
+    }
+  }, [mods, skills, selectedMod]);
+
   const loadSkills = async () => {
     try {
       setLoading(true);
       setError(null);
       const skillsData = await skillService.getSkills();
       setSkills(skillsData);
+      
+      // Guardar valores originales
+      const originalValues: OriginalSkillValues = {};
+      skillsData.forEach(skill => {
+        originalValues[skill.id] = {
+          reqlevel: skill.reqlevel,
+          maxlvl: skill.maxlvl
+        };
+      });
+      setOriginalSkillValues(originalValues);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
@@ -110,6 +156,21 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
     }));
   };
 
+  const handleCardClick = (skill: Skill, event: React.MouseEvent) => {
+    // No activar edición si se hace click en un botón o input
+    const target = event.target as HTMLElement;
+    if (target.tagName === 'BUTTON' || target.tagName === 'INPUT') {
+      return;
+    }
+    
+    // Si ya está en edición, no hacer nada
+    if (editingSkills[skill.id]) {
+      return;
+    }
+    
+    startEditing(skill);
+  };
+
   const cancelEditing = (skillId: number) => {
     setEditingSkills(prev => {
       const newState = { ...prev };
@@ -126,6 +187,52 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
         [field]: value
       }
     }));
+  };
+
+  // Funciones para incremento rápido
+  const startIncrement = (skillId: number, field: keyof SkillEdit, direction: 'up' | 'down') => {
+    const intervalKey = `${skillId}-${field}-${direction}`;
+    
+    // Limpiar cualquier intervalo existente
+    if (incrementIntervals[intervalKey]) {
+      clearTimeout(incrementIntervals[intervalKey]);
+    }
+    
+    const increment = () => {
+      const currentValue = editingSkills[skillId]?.[field] || 0;
+      const newValue = direction === 'up' 
+        ? Math.min(99, currentValue + 1)
+        : Math.max(field === 'maxlvl' ? 1 : 0, currentValue - 1);
+      
+      updateEditingValue(skillId, field, newValue);
+      
+      // Configurar el siguiente incremento más rápido (100ms)
+      const newInterval = setTimeout(increment, 100);
+      setIncrementIntervals(prev => ({
+        ...prev,
+        [intervalKey]: newInterval
+      }));
+    };
+    
+    // Primer incremento después de 300ms
+    const initialInterval = setTimeout(increment, 300);
+    setIncrementIntervals(prev => ({
+      ...prev,
+      [intervalKey]: initialInterval
+    }));
+  };
+
+  const stopIncrement = (skillId: number, field: keyof SkillEdit, direction: 'up' | 'down') => {
+    const intervalKey = `${skillId}-${field}-${direction}`;
+    
+    if (incrementIntervals[intervalKey]) {
+      clearTimeout(incrementIntervals[intervalKey]);
+      setIncrementIntervals(prev => {
+        const newState = { ...prev };
+        delete newState[intervalKey];
+        return newState;
+      });
+    }
   };
 
   const saveSkill = async (skillId: number) => {
@@ -196,15 +303,49 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
   };
 
   const generateFile = async () => {
-    if (!selectedMod || skillChanges.length === 0) return;
+    if (skillChanges.length === 0) return;
+
+    // Determinar el mod para exportar
+    let modToExport: number | null = null;
+    
+    // Si hay un mod seleccionado y es un número válido, usarlo
+    if (typeof selectedMod === 'number') {
+      modToExport = selectedMod;
+    }
+    
+    // Si no hay mod seleccionado, usar el mod de los cambios
+    if (!modToExport) {
+      const changedSkillIds = skillChanges.map(change => change.id);
+      const changedSkills = skills.filter(skill => changedSkillIds.includes(skill.id));
+      
+      if (changedSkills.length === 0) return;
+      
+      // Verificar que todos los cambios son del mismo mod
+      const modIds = changedSkills.map(skill => skill.modId);
+      const uniqueModIds = Array.from(new Set(modIds));
+      
+      if (uniqueModIds.length > 1) {
+        alert('Los cambios pertenecen a múltiples mods. Por favor, selecciona un mod específico para exportar.');
+        return;
+      }
+      
+      modToExport = uniqueModIds[0];
+    }
+
+    if (!modToExport) return;
 
     try {
       setGeneratingFile(true);
-      const response = await skillService.generateModifiedSkillsFile(selectedMod as number);
+      const response = await skillService.generateModifiedSkillsFile(modToExport);
       
       if (response.success && response.data) {
         alert(`Archivo skillsmod.txt generado exitosamente en: ${response.data.filePath}`);
         setHasUnsavedChanges(false);
+        // Limpiar cambios relacionados con este mod
+        setSkillChanges(prev => {
+          const modSkills = skills.filter(skill => skill.modId === modToExport).map(skill => skill.id);
+          return prev.filter(change => !modSkills.includes(change.id));
+        });
       } else {
         alert('Error generando archivo: ' + response.error);
       }
@@ -216,9 +357,36 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
     }
   };
 
-  const clearChanges = () => {
-    setSkillChanges([]);
-    setHasUnsavedChanges(false);
+  const clearChanges = async () => {
+    try {
+      // Restaurar valores originales de las skills que han cambiado
+      const changedSkillIds = Array.from(new Set(skillChanges.map(change => change.id)));
+      
+      for (const skillId of changedSkillIds) {
+        const originalValues = originalSkillValues[skillId];
+        if (originalValues) {
+          // Restaurar en la base de datos
+          await skillService.updateSkill(skillId, originalValues);
+          
+          // Actualizar en el estado local
+          setSkills(prev => prev.map(skill => 
+            skill.id === skillId 
+              ? { ...skill, ...originalValues }
+              : skill
+          ));
+        }
+      }
+      
+      // Limpiar cambios y estado de edición
+      setSkillChanges([]);
+      setHasUnsavedChanges(false);
+      setEditingSkills({});
+      
+      alert('Se han restaurado los valores originales de las skills modificadas.');
+    } catch (error) {
+      console.error('Error restaurando valores originales:', error);
+      alert('Error al restaurar los valores originales. Por favor, intenta de nuevo.');
+    }
   };
 
   const getCharClassDisplayName = (charclass: string) => {
@@ -274,7 +442,7 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
         <div className="header-right">
           <button 
             onClick={generateFile}
-            disabled={generatingFile || selectedMod === '' || skillChanges.length === 0}
+            disabled={generatingFile || skillChanges.length === 0}
             className="generate-file-button"
           >
             {generatingFile ? 'Generando...' : '📄 Exportar Cambios'}
@@ -369,7 +537,12 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
               const isSaving = savingSkills.has(skill.id);
               
               return (
-                <div key={skill.id} className="skill-card">
+                <div 
+                  key={skill.id} 
+                  className={`skill-card ${isEditing ? 'editing' : ''}`}
+                  onClick={(e) => handleCardClick(skill, e)}
+                  style={{ cursor: isEditing ? 'default' : 'pointer' }}
+                >
                   <div className="skill-header">
                     <h3 className="skill-name">{skill.skill}</h3>
                     <span className="skill-star-id">*{skill.starId}</span>
@@ -387,7 +560,11 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
                           <div className="value-editor">
                             <button 
                               onClick={() => updateEditingValue(skill.id, 'reqlevel', Math.max(0, isEditing.reqlevel - 1))}
+                              onMouseDown={() => startIncrement(skill.id, 'reqlevel', 'down')}
+                              onMouseUp={() => stopIncrement(skill.id, 'reqlevel', 'down')}
+                              onMouseLeave={() => stopIncrement(skill.id, 'reqlevel', 'down')}
                               disabled={isSaving}
+                              className="increment-button"
                             >
                               -
                             </button>
@@ -398,10 +575,15 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
                               min="0"
                               max="99"
                               disabled={isSaving}
+                              onClick={(e) => e.stopPropagation()}
                             />
                             <button 
                               onClick={() => updateEditingValue(skill.id, 'reqlevel', Math.min(99, isEditing.reqlevel + 1))}
+                              onMouseDown={() => startIncrement(skill.id, 'reqlevel', 'up')}
+                              onMouseUp={() => stopIncrement(skill.id, 'reqlevel', 'up')}
+                              onMouseLeave={() => stopIncrement(skill.id, 'reqlevel', 'up')}
                               disabled={isSaving}
+                              className="increment-button"
                             >
                               +
                             </button>
@@ -417,7 +599,11 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
                           <div className="value-editor">
                             <button 
                               onClick={() => updateEditingValue(skill.id, 'maxlvl', Math.max(1, isEditing.maxlvl - 1))}
+                              onMouseDown={() => startIncrement(skill.id, 'maxlvl', 'down')}
+                              onMouseUp={() => stopIncrement(skill.id, 'maxlvl', 'down')}
+                              onMouseLeave={() => stopIncrement(skill.id, 'maxlvl', 'down')}
                               disabled={isSaving}
+                              className="increment-button"
                             >
                               -
                             </button>
@@ -428,10 +614,15 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
                               min="1"
                               max="99"
                               disabled={isSaving}
+                              onClick={(e) => e.stopPropagation()}
                             />
                             <button 
                               onClick={() => updateEditingValue(skill.id, 'maxlvl', Math.min(99, isEditing.maxlvl + 1))}
+                              onMouseDown={() => startIncrement(skill.id, 'maxlvl', 'up')}
+                              onMouseUp={() => stopIncrement(skill.id, 'maxlvl', 'up')}
+                              onMouseLeave={() => stopIncrement(skill.id, 'maxlvl', 'up')}
                               disabled={isSaving}
+                              className="increment-button"
                             >
                               +
                             </button>
@@ -451,7 +642,7 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
                         }
                       </div>
                       <div className="skill-mod">
-                        <strong>Mod:</strong> {skill.modName}
+                        <strong>Mod:</strong> {skill.modName || 'Desconocido'}
                       </div>
                     </div>
                     
@@ -459,14 +650,20 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
                       {isEditing ? (
                         <>
                           <button 
-                            onClick={() => saveSkill(skill.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              saveSkill(skill.id);
+                            }}
                             disabled={isSaving}
                             className="save-button"
                           >
                             {isSaving ? 'Guardando...' : 'Guardar'}
                           </button>
                           <button 
-                            onClick={() => cancelEditing(skill.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              cancelEditing(skill.id);
+                            }}
                             disabled={isSaving}
                             className="cancel-button"
                           >
@@ -475,7 +672,10 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
                         </>
                       ) : (
                         <button 
-                          onClick={() => startEditing(skill)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startEditing(skill);
+                          }}
                           className="edit-button"
                         >
                           Editar
