@@ -137,8 +137,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => 
 
       <div className="sidebar-footer">
         <div className="footer-info">
-          <p>v1.0.0</p>
-          <p>Gestor de Mods D2</p>
+          <p>v0.2.0</p>
+          <p>CareZapato</p>
         </div>
       </div>
     </div>

@@ -1,26 +1,65 @@
-# DiaMod2R - Diablo 2 Mod Character Stats Manager
+# DiaMod2R - Diablo 2 Mod Character Stats & Skills Manager
 
-![Version](https://img.shields.io/badge/version-0.0.1-blue.svg)
+![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
-![TypeScript](https://img.shields.io/badge/typescript-5.9.2-blue.svg)
+![T## 🗺️ Roadmap Futuro
+
+### v0.3.0 - Próximamente
+- 🔄 Gestión de items y equipamiento (armor.txt, weapons.txt)
+- 🔄 Editor de runas y gemas
+- 🔄 Validación avanzada de dependencias entre archivos
+
+### v0.4.0 - Planeado
+- 🔄 Import/Export de configuraciones completas
+- 🔄 Historial de cambios y versionado
+- 🔄 Backup automático de archivos originales
+- 🔄 Comparador de mods side-by-side
+
+### v1.0.0 - Futuro
+- 🗺️ Soporte para múltiples idiomas
+- 🗺️ Plugin system para extensiones
+- 🗺️ Interfaz de scripting avanzada
+- 🗺️ Colaboración multi-usuario](https://img.shields.io/badge/typescript-5.9.2-blue.svg)
 ![React](https://img.shields.io/badge/react-18.3.1-blue.svg)
 ![PostgreSQL](https://img.shields.io/badge/postgresql-12%2B-blue.svg)
 
-Aplicación web para gestionar y editar estadísticas de personajes en mods de Diablo 2, construida con Node.js/TypeScript backend y React/TypeScript frontend.
+Aplicación web para gestionar y editar estadísticas de personajes y habilidades en mods de Diablo 2, construida con Node.js/TypeScript backend y React/TypeScript frontend.
 
 ## � Descripción
 
-DiaMod2R es una herramienta especializada que permite a los desarrolladores de mods de Diablo 2 gestionar y editar las estadísticas de personajes de manera intuitiva y eficiente. La aplicación lee archivos `charstats.txt` de mods, los almacena en una base de datos PostgreSQL, y proporciona una interfaz web moderna para editarlos.
+DiaMod2R es una herramienta especializada que permite a los desarrolladores de mods de Diablo 2 gestionar y editar tanto las estadísticas de personajes como las habilidades de manera intuitiva y eficiente. La aplicación lee archivos `charstats.txt` y `skills.txt` de mods, los almacena en una base de datos PostgreSQL, y proporciona una interfaz web moderna para editarlos.
 
 ### 🎯 Características Principales
 
+#### Gestión de Personajes
 - **📁 Exploración de Mods**: Navega y selecciona carpetas de mods con validación automática de estructura
 - **📊 Carrusel de Héroes**: Interfaz tipo carrusel para navegar entre clases de personajes
 - **✏️ Editor Avanzado**: Edita estadísticas con controles +/- e inputs directos
 - **🎨 Indicadores Visuales**: Cambios mostrados en tiempo real con colores (verde/rojo)
 - **💾 Guardado Individual**: Guarda cambios por héroe de forma independiente
 - **🔄 Detección de Expansión**: Reconoce automáticamente personajes clásicos vs expansión
+
+#### Gestión de Habilidades ✨ **NUEVO**
+- **🎯 Sistema Completo de Skills**: Procesamiento y gestión de archivos skills.txt
+- **📋 Vistas Duales**: 
+  - Vista de tarjetas: Cards compactas y visuales para edición detallada
+  - Vista de lista: Filas horizontales para navegación rápida y edición masiva
+- **⚡ Editor Inteligente**:
+  - Click-to-edit: Activa edición haciendo click en cualquier skill
+  - Botones de incremento con repetición rápida (mantener presionado)
+  - Validación en tiempo real con límites min/max
+- **📄 Paginación Avanzada**: Navegación eficiente con control de elementos por página
+- **🔍 Filtrado Potente**: Por mod, clase de personaje, y búsqueda en nombres/descripciones
+- **💾 Exportación y Seguimiento**: 
+  - Tracking de cambios con valores antes/después
+  - Exportación a archivos skillsmod.txt
+  - Restauración de valores originales
+
+#### Interfaz y Experiencia
 - **🖥️ Interfaz Backoffice**: Diseño profesional con sidebar de navegación
+- **📱 Responsive Design**: Adaptación automática a dispositivos móviles
+- **🎨 UI/UX Moderno**: Transiciones suaves, estados visuales claros
+- **⚡ Performance**: Paginación inteligente y carga optimizada de datos
 
 ### 🏗️ Arquitectura
 
@@ -103,19 +142,25 @@ MiMod/
     └── data/
         └── global/
             └── excel/
-                ├── charstats.txt     # Archivo principal requerido
-                ├── skills.txt
+                ├── charstats.txt     # Estadísticas de personajes
+                ├── skills.txt        # Habilidades y skills ✨ NUEVO
                 ├── armor.txt
                 └── otros archivos...
 ```
 
-### 📄 Formato charstats.txt
+### 📄 Formatos Soportados
 
-El archivo debe contener:
+#### charstats.txt
 - **Header**: Primera línea con nombres de columnas separadas por tabs
 - **Datos de héroes**: Una línea por clase de personaje
 - **Línea "Expansion"**: Separa personajes clásicos de expansión
 - **Personajes de expansión**: Después de la línea "Expansion"
+
+#### skills.txt ✨ **NUEVO**
+- **293 columnas** de datos de habilidades procesadas automáticamente
+- **Campos estrella**: Conversión automática de campos con * al final
+- **Relaciones**: Vínculos automáticos con mods para preservar contexto
+- **Exportación**: Generación de archivos skillsmod.txt modificados
 
 ## �️ Tecnologías Utilizadas
 
@@ -140,6 +185,7 @@ El archivo debe contener:
 
 ## 🎮 Flujo de Uso
 
+### Gestión de Character Stats
 1. **Seleccionar Mod**: Usa el navegador de carpetas o escribe la ruta manualmente
 2. **Procesar Archivo**: La aplicación lee y valida `charstats.txt`
 3. **Navegar Héroes**: Usa el carrusel para moverte entre personajes
@@ -147,8 +193,34 @@ El archivo debe contener:
 5. **Ver Cambios**: Observa diferencias en tiempo real (verde/rojo)
 6. **Guardar**: Confirma cambios individualmente por héroe
 
-## 🔧 Funcionalidades Implementadas (v0.0.1)
+### Gestión de Skills ✨ **NUEVO**
+1. **Acceder a Skills**: Click en "Skills" en el sidebar de navegación
+2. **Procesar Skills**: La aplicación carga automáticamente skills.txt del mod activo
+3. **Elegir Vista**: Selecciona entre vista de tarjetas o lista según tu preferencia
+4. **Filtrar y Buscar**: Usa los filtros por mod, clase o búsqueda por texto
+5. **Editar Skills**:
+   - **Vista de tarjetas**: Click en cualquier skill para activar edición
+   - **Vista de lista**: Edición rápida en filas horizontales
+   - **Botones +/-**: Mantén presionado para incremento rápido automático
+6. **Seguir Cambios**: Visualiza modificaciones en tiempo real con colores
+7. **Paginar**: Navega eficientemente con controles de paginación
+8. **Exportar**: Genera archivos skillsmod.txt con tus modificaciones
 
+## 🔧 Funcionalidades Implementadas
+
+### v0.2.0 - Sistema de Skills ✨ **ACTUAL**
+- ✅ **Procesamiento completo de skills.txt** - Lectura de 293 columnas de datos
+- ✅ **Vistas duales (tarjetas/lista)** - Diseño compacto y eficiente
+- ✅ **Paginación avanzada** - Navegación optimizada para grandes datasets  
+- ✅ **Filtrado y búsqueda** - Por mod, clase, nombre y descripción
+- ✅ **Editor click-to-edit** - Activación intuitiva de edición
+- ✅ **Incrementos rápidos** - Botones con repetición automática
+- ✅ **Tracking de cambios** - Visualización antes/después en tiempo real
+- ✅ **Exportación de skills** - Generación de archivos skillsmod.txt
+- ✅ **Preservación de relaciones** - Mantenimiento de vínculos mod-skill
+- ✅ **Validación en tiempo real** - Límites min/max y validación de datos
+
+### v0.0.1 - Base de Character Stats
 - ✅ Lectura y parseo de archivos charstats.txt
 - ✅ Detección automática de estructura de mod
 - ✅ Distinción entre personajes clásicos y de expansión
@@ -313,6 +385,7 @@ El frontend estará disponible en `http://localhost:3000`
 
 ### Mod
 - ID, nombre, ruta de carpeta, fechas de creación y actualización
+- Relaciones: CharStats (1:N), Skills (1:N)
 
 ### CharStat
 - Todas las columnas del archivo `charstats.txt`:
@@ -321,13 +394,32 @@ El frontend estará disponible en `http://localhost:3000`
   - Items: item1-10 con sus ubicaciones, cantidades y calidades
   - Indicador de expansión
 
+### Skill ✨ **NUEVO**
+- Todas las 293 columnas del archivo `skills.txt`:
+  - Identificadores: skill, Id, charclass, skilldesc, etc.
+  - Atributos de daño: mindam, maxdam, EType, etc.
+  - Requisitos: reqlevel, reqstr, reqdex, reqint, reqvit, etc.
+  - Sinergias: Param1-8, calc1-4, etc.
+  - Relación con mod para preservar contexto
+
 ## API Endpoints
 
+### System & Health
 - `GET /health` - Health check del servidor
+
+### Mods
 - `POST /api/mods/process` - Procesar una carpeta de mod
 - `GET /api/mods` - Obtener todos los mods
 - `GET /api/mods/:id` - Obtener un mod específico
+
+### Character Stats
 - `GET /api/mods/:id/charstats` - Obtener CharStats de un mod
+- `PUT /api/charstats/:id` - Actualizar CharStat específico
+
+### Skills ✨ **NUEVO**
+- `GET /api/skills` - Obtener skills con filtros y paginación
+- `PUT /api/skills/:id` - Actualizar skill específico
+- `POST /api/skills/export` - Exportar skills modificados a archivo
 
 ## Desarrollo
 
@@ -357,15 +449,6 @@ El frontend estará disponible en `http://localhost:3000`
 - **TypeScript**: Tipado estático
 - **Axios**: Cliente HTTP
 - **CSS3**: Estilos con gradientes y efectos modernos
-
-## Próximas Funcionalidades
-
-- [ ] Editor visual de CharStats
-- [ ] Soporte para más archivos de configuración del mod
-- [ ] Exportación e importación de configuraciones
-- [ ] Validación avanzada de archivos
-- [ ] Historial de cambios
-- [ ] Backup automático antes de modificaciones
 
 ## Contribuir
 
