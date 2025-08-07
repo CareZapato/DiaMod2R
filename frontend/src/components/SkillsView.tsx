@@ -12,6 +12,14 @@ interface SkillEdit {
   maxlvl: number;
 }
 
+interface SkillChange {
+  id: number;
+  skill: string;
+  field: string;
+  oldValue: number;
+  newValue: number;
+}
+
 export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [filteredSkills, setFilteredSkills] = useState<Skill[]>([]);
@@ -20,6 +28,8 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
   const [editingSkills, setEditingSkills] = useState<{ [skillId: number]: SkillEdit }>({});
   const [savingSkills, setSavingSkills] = useState<Set<number>>(new Set());
   const [generatingFile, setGeneratingFile] = useState(false);
+  const [skillChanges, setSkillChanges] = useState<SkillChange[]>([]);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   // Filtros
   const [selectedMod, setSelectedMod] = useState<number | ''>('');
@@ -122,18 +132,56 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
     const edits = editingSkills[skillId];
     if (!edits) return;
 
+    const skill = skills.find(s => s.id === skillId);
+    if (!skill) return;
+
     try {
       setSavingSkills(prev => new Set(prev).add(skillId));
       
-      const updatedSkill = await skillService.updateSkill(skillId, edits);
-      
-      // Actualizar la skill en la lista local
-      setSkills(prev => prev.map(skill => 
-        skill.id === skillId ? updatedSkill : skill
-      ));
-      
-      // Limpiar el estado de edición
-      cancelEditing(skillId);
+      const response = await skillService.updateSkill(skillId, edits);
+      if (response.success && response.data) {
+        const updatedSkill = response.data;
+        
+        // Actualizar la skill en la lista local
+        setSkills(prev => prev.map(s => 
+          s.id === skillId ? updatedSkill : s
+        ));
+
+        // Trackear cambios
+        const changes: SkillChange[] = [];
+        if (skill.reqlevel !== edits.reqlevel) {
+          changes.push({
+            id: skillId,
+            skill: skill.skill,
+            field: 'reqlevel',
+            oldValue: skill.reqlevel,
+            newValue: edits.reqlevel
+          });
+        }
+        if (skill.maxlvl !== edits.maxlvl) {
+          changes.push({
+            id: skillId,
+            skill: skill.skill,
+            field: 'maxlvl',
+            oldValue: skill.maxlvl,
+            newValue: edits.maxlvl
+          });
+        }
+
+        if (changes.length > 0) {
+          setSkillChanges(prev => {
+            // Remover cambios anteriores para esta skill y estos campos
+            const filtered = prev.filter(change => 
+              !(change.id === skillId && changes.some(c => c.field === change.field))
+            );
+            return [...filtered, ...changes];
+          });
+          setHasUnsavedChanges(true);
+        }
+        
+        // Limpiar el estado de edición
+        cancelEditing(skillId);
+      }
       
     } catch (error) {
       console.error('Error saving skill:', error);
@@ -147,19 +195,30 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
     }
   };
 
-  const generateModifiedFile = async () => {
-    if (selectedMod === '') return;
-    
+  const generateFile = async () => {
+    if (!selectedMod || skillChanges.length === 0) return;
+
     try {
       setGeneratingFile(true);
-      const result = await skillService.generateModifiedSkillsFile(selectedMod as number);
-      alert(`Archivo skillsmod.txt generado exitosamente en:\n${result.filePath}`);
+      const response = await skillService.generateModifiedSkillsFile(selectedMod as number);
+      
+      if (response.success && response.data) {
+        alert(`Archivo skillsmod.txt generado exitosamente en: ${response.data.filePath}`);
+        setHasUnsavedChanges(false);
+      } else {
+        alert('Error generando archivo: ' + response.error);
+      }
     } catch (error) {
-      console.error('Error generating modified skills file:', error);
-      alert('Error al generar el archivo modificado. Por favor, intenta de nuevo.');
+      console.error('Error generating file:', error);
+      alert('Error al generar el archivo. Por favor, intenta de nuevo.');
     } finally {
       setGeneratingFile(false);
     }
+  };
+
+  const clearChanges = () => {
+    setSkillChanges([]);
+    setHasUnsavedChanges(false);
   };
 
   const getCharClassDisplayName = (charclass: string) => {
@@ -206,14 +265,19 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
         <div className="header-left">
           <h2>Habilidades del Mod</h2>
           <p>Total: {filteredSkills.length} habilidades</p>
+          {skillChanges.length > 0 && (
+            <p className="changes-info">
+              ✏️ {skillChanges.length} cambio{skillChanges.length !== 1 ? 's' : ''} sin exportar
+            </p>
+          )}
         </div>
         <div className="header-right">
           <button 
-            onClick={generateModifiedFile}
-            disabled={generatingFile || selectedMod === '' || filteredSkills.length === 0}
+            onClick={generateFile}
+            disabled={generatingFile || selectedMod === '' || skillChanges.length === 0}
             className="generate-file-button"
           >
-            {generatingFile ? 'Generando...' : '📄 Generar Archivo'}
+            {generatingFile ? 'Generando...' : '📄 Exportar Cambios'}
           </button>
         </div>
       </div>
@@ -268,6 +332,29 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
           Limpiar filtros
         </button>
       </div>
+
+      {/* Lista de cambios */}
+      {skillChanges.length > 0 && (
+        <div className="changes-summary">
+          <div className="changes-header">
+            <h3>📝 Cambios Realizados ({skillChanges.length})</h3>
+            <button onClick={clearChanges} className="clear-changes-button">
+              Limpiar cambios
+            </button>
+          </div>
+          <div className="changes-list">
+            {skillChanges.map((change, index) => (
+              <div key={index} className="change-item">
+                <span className="skill-name">{change.skill}</span>
+                <span className="change-field">{change.field}</span>
+                <span className="change-values">
+                  {change.oldValue} → {change.newValue}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Lista de habilidades */}
       <div className="skills-list">

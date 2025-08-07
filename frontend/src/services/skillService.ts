@@ -48,30 +48,30 @@ export const skillService = {
       const response = await axios.get<Skill>(`${API_BASE_URL}/skills/${id}`);
       return response.data;
     } catch (error) {
-      console.error('Error obteniendo skill por ID:', error);
+      console.error('Error obteniendo skill:', error);
       throw new Error('No se pudo obtener la skill');
     }
   },
 
-  // Actualizar skill
-  async updateSkill(id: number, updates: { reqlevel?: number; maxlvl?: number }): Promise<Skill> {
+  // Actualizar una skill
+  async updateSkill(id: number, updateData: Partial<Skill>): Promise<ApiResponse<Skill>> {
     try {
-      const response = await axios.put<Skill>(`${API_BASE_URL}/skills/${id}`, updates);
+      const response = await axios.put<ApiResponse<Skill>>(`${API_BASE_URL}/mods/skills/${id}`, updateData);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error actualizando skill:', error);
-      throw new Error('No se pudo actualizar la skill');
+      throw error;
     }
   },
 
-  // Generar archivo skills modificado
-  async generateModifiedSkillsFile(modId: number): Promise<{ filePath: string }> {
+  // Generar archivo skillsmod.txt modificado
+  async generateModifiedSkillsFile(modId: number): Promise<ApiResponse<{ filePath: string }>> {
     try {
-      const response = await axios.post<{ success: boolean; data: { filePath: string } }>(`${API_BASE_URL}/mods/${modId}/generate-modified-skills-file`);
-      return response.data.data;
-    } catch (error) {
+      const response = await axios.post<ApiResponse<{ filePath: string }>>(`${API_BASE_URL}/mods/${modId}/generate-modified-skills-file`);
+      return response.data;
+    } catch (error: any) {
       console.error('Error generando archivo skills modificado:', error);
-      throw new Error('No se pudo generar el archivo skills modificado');
+      throw error;
     }
   }
 };

@@ -154,6 +154,31 @@ router.put('/charstats/:id', async (req: Request, res: Response) => {
   }
 });
 
+// PUT /api/mods/skills/:id - Actualizar una Skill específica
+router.put('/skills/:id', async (req: Request, res: Response) => {
+  try {
+    const skillId = parseInt(req.params.id);
+    if (isNaN(skillId)) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
+
+    const updateData = req.body;
+    const updatedSkill = await modService.updateSkill(skillId, updateData);
+    
+    res.json({
+      success: true,
+      message: 'Skill actualizada exitosamente',
+      data: updatedSkill
+    });
+  } catch (error) {
+    console.error('Error en /api/mods/skills/:id:', error);
+    res.status(500).json({ 
+      error: 'Error actualizando Skill',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
 // POST /api/mods/:id/generate-modified-file - Generar archivo charstatsmod.txt
 router.post('/:id/generate-modified-file', async (req: Request, res: Response) => {
   try {

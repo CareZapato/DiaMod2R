@@ -228,6 +228,21 @@ export class ModService {
   }
 
   /**
+   * Actualiza una Skill específica
+   */
+  async updateSkill(id: number, updateData: Partial<Skill>): Promise<Skill> {
+    const existingSkill = await this.skillRepository.findById(id);
+    if (!existingSkill) {
+      throw new Error(`Skill con ID ${id} no encontrada`);
+    }
+
+    // Actualizar solo los campos proporcionados
+    Object.assign(existingSkill, updateData);
+    
+    return await this.skillRepository.save(existingSkill);
+  }
+
+  /**
    * Genera el archivo charstatsmod.txt con los cambios aplicados
    */
   async generateModifiedCharStatsFile(modId: number): Promise<string> {
