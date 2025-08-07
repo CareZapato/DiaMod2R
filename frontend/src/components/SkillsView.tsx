@@ -7,11 +7,19 @@ interface SkillsViewProps {
   mods: Mod[];
 }
 
+interface SkillEdit {
+  reqlevel: number;
+  maxlvl: number;
+}
+
 export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [filteredSkills, setFilteredSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editingSkills, setEditingSkills] = useState<{ [skillId: number]: SkillEdit }>({});
+  const [savingSkills, setSavingSkills] = useState<Set<number>>(new Set());
+  const [generatingFile, setGeneratingFile] = useState(false);
   
   // Filtros
   const [selectedMod, setSelectedMod] = useState<number | ''>('');
@@ -82,6 +90,78 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
     setSearchTerm('');
   };
 
+  const startEditing = (skill: Skill) => {
+    setEditingSkills(prev => ({
+      ...prev,
+      [skill.id]: {
+        reqlevel: skill.reqlevel,
+        maxlvl: skill.maxlvl
+      }
+    }));
+  };
+
+  const cancelEditing = (skillId: number) => {
+    setEditingSkills(prev => {
+      const newState = { ...prev };
+      delete newState[skillId];
+      return newState;
+    });
+  };
+
+  const updateEditingValue = (skillId: number, field: keyof SkillEdit, value: number) => {
+    setEditingSkills(prev => ({
+      ...prev,
+      [skillId]: {
+        ...prev[skillId],
+        [field]: value
+      }
+    }));
+  };
+
+  const saveSkill = async (skillId: number) => {
+    const edits = editingSkills[skillId];
+    if (!edits) return;
+
+    try {
+      setSavingSkills(prev => new Set(prev).add(skillId));
+      
+      const updatedSkill = await skillService.updateSkill(skillId, edits);
+      
+      // Actualizar la skill en la lista local
+      setSkills(prev => prev.map(skill => 
+        skill.id === skillId ? updatedSkill : skill
+      ));
+      
+      // Limpiar el estado de edición
+      cancelEditing(skillId);
+      
+    } catch (error) {
+      console.error('Error saving skill:', error);
+      alert('Error al guardar la skill. Por favor, intenta de nuevo.');
+    } finally {
+      setSavingSkills(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(skillId);
+        return newSet;
+      });
+    }
+  };
+
+  const generateModifiedFile = async () => {
+    if (selectedMod === '') return;
+    
+    try {
+      setGeneratingFile(true);
+      const result = await skillService.generateModifiedSkillsFile(selectedMod as number);
+      alert(`Archivo skillsmod.txt generado exitosamente en:\n${result.filePath}`);
+    } catch (error) {
+      console.error('Error generating modified skills file:', error);
+      alert('Error al generar el archivo modificado. Por favor, intenta de nuevo.');
+    } finally {
+      setGeneratingFile(false);
+    }
+  };
+
   const getCharClassDisplayName = (charclass: string) => {
     const classMap: { [key: string]: string } = {
       'ama': 'Amazon',
@@ -123,8 +203,19 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
   return (
     <div className="skills-view">
       <div className="skills-header">
-        <h2>Habilidades del Mod</h2>
-        <p>Total: {filteredSkills.length} habilidades</p>
+        <div className="header-left">
+          <h2>Habilidades del Mod</h2>
+          <p>Total: {filteredSkills.length} habilidades</p>
+        </div>
+        <div className="header-right">
+          <button 
+            onClick={generateModifiedFile}
+            disabled={generatingFile || selectedMod === '' || filteredSkills.length === 0}
+            className="generate-file-button"
+          >
+            {generatingFile ? 'Generando...' : '📄 Generar Archivo'}
+          </button>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -186,33 +277,128 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
           </div>
         ) : (
           <div className="skills-grid">
-            {filteredSkills.map(skill => (
-              <div key={skill.id} className="skill-card">
-                <div className="skill-header">
-                  <h3 className="skill-name">{skill.skill}</h3>
-                  <span className="skill-star-id">*{skill.starId}</span>
-                </div>
-                
-                <div className="skill-details">
-                  <div className="skill-description">
-                    {skill.skilldesc || 'Sin descripción'}
+            {filteredSkills.map(skill => {
+              const isEditing = editingSkills[skill.id];
+              const isSaving = savingSkills.has(skill.id);
+              
+              return (
+                <div key={skill.id} className="skill-card">
+                  <div className="skill-header">
+                    <h3 className="skill-name">{skill.skill}</h3>
+                    <span className="skill-star-id">*{skill.starId}</span>
                   </div>
                   
-                  <div className="skill-meta">
-                    <div className="skill-class">
-                      <strong>Clase:</strong> {
-                        skill.charclass ? 
-                        getCharClassDisplayName(skill.charclass) : 
-                        <span className="no-class">Sin clase</span>
-                      }
+                  <div className="skill-details">
+                    <div className="skill-description">
+                      {skill.skilldesc || 'Sin descripción'}
                     </div>
-                    <div className="skill-mod">
-                      <strong>Mod:</strong> {skill.modName}
+                    
+                    <div className="skill-requirements">
+                      <div className="skill-requirement">
+                        <label>Nivel Requerido:</label>
+                        {isEditing ? (
+                          <div className="value-editor">
+                            <button 
+                              onClick={() => updateEditingValue(skill.id, 'reqlevel', Math.max(0, isEditing.reqlevel - 1))}
+                              disabled={isSaving}
+                            >
+                              -
+                            </button>
+                            <input
+                              type="number"
+                              value={isEditing.reqlevel}
+                              onChange={(e) => updateEditingValue(skill.id, 'reqlevel', parseInt(e.target.value) || 0)}
+                              min="0"
+                              max="99"
+                              disabled={isSaving}
+                            />
+                            <button 
+                              onClick={() => updateEditingValue(skill.id, 'reqlevel', Math.min(99, isEditing.reqlevel + 1))}
+                              disabled={isSaving}
+                            >
+                              +
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="skill-value">{skill.reqlevel}</span>
+                        )}
+                      </div>
+                      
+                      <div className="skill-requirement">
+                        <label>Nivel Máximo:</label>
+                        {isEditing ? (
+                          <div className="value-editor">
+                            <button 
+                              onClick={() => updateEditingValue(skill.id, 'maxlvl', Math.max(1, isEditing.maxlvl - 1))}
+                              disabled={isSaving}
+                            >
+                              -
+                            </button>
+                            <input
+                              type="number"
+                              value={isEditing.maxlvl}
+                              onChange={(e) => updateEditingValue(skill.id, 'maxlvl', parseInt(e.target.value) || 1)}
+                              min="1"
+                              max="99"
+                              disabled={isSaving}
+                            />
+                            <button 
+                              onClick={() => updateEditingValue(skill.id, 'maxlvl', Math.min(99, isEditing.maxlvl + 1))}
+                              disabled={isSaving}
+                            >
+                              +
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="skill-value">{skill.maxlvl}</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="skill-meta">
+                      <div className="skill-class">
+                        <strong>Clase:</strong> {
+                          skill.charclass ? 
+                          getCharClassDisplayName(skill.charclass) : 
+                          <span className="no-class">Sin clase</span>
+                        }
+                      </div>
+                      <div className="skill-mod">
+                        <strong>Mod:</strong> {skill.modName}
+                      </div>
+                    </div>
+                    
+                    <div className="skill-actions">
+                      {isEditing ? (
+                        <>
+                          <button 
+                            onClick={() => saveSkill(skill.id)}
+                            disabled={isSaving}
+                            className="save-button"
+                          >
+                            {isSaving ? 'Guardando...' : 'Guardar'}
+                          </button>
+                          <button 
+                            onClick={() => cancelEditing(skill.id)}
+                            disabled={isSaving}
+                            className="cancel-button"
+                          >
+                            Cancelar
+                          </button>
+                        </>
+                      ) : (
+                        <button 
+                          onClick={() => startEditing(skill)}
+                          className="edit-button"
+                        >
+                          Editar
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

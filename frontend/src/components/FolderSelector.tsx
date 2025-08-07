@@ -97,7 +97,8 @@ const FolderSelector: React.FC<FolderSelectorProps> = ({ onFolderSelect, selecte
           <li>La carpeta debe contener una subcarpeta con el mismo nombre + ".mpq"</li>
           <li>Dentro de esa subcarpeta debe existir la ruta: data/global/excel</li>
           <li>En la carpeta excel deben estar los archivos .txt del mod</li>
-          <li>Debe existir específicamente el archivo "charstats.txt"</li>
+          <li>Debe existir específicamente el archivo "charstats.txt" (obligatorio)</li>
+          <li>Debe existir específicamente el archivo "skills.txt" (obligatorio)</li>
         </ol>
         <p><strong>Ejemplo de estructura:</strong></p>
         <pre>
@@ -106,8 +107,8 @@ const FolderSelector: React.FC<FolderSelectorProps> = ({ onFolderSelect, selecte
       └── data/
           └── global/
               └── excel/
-                  ├── charstats.txt
-                  ├── skills.txt
+                  ├── charstats.txt  ✅ Requerido
+                  ├── skills.txt     ✅ Requerido
                   └── otros archivos...`}
         </pre>
       </div>

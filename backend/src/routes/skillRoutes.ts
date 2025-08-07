@@ -41,7 +41,9 @@ router.get('/', async (req: Request, res: Response) => {
       charclass: skill.charclass,
       skilldesc: skill.skilldesc,
       modId: skill.modId,
-      modName: skill.mod?.name || 'Unknown'
+      modName: skill.mod?.name || 'Unknown',
+      reqlevel: skill.reqlevel,
+      maxlvl: skill.maxlvl
     }));
     
     res.json(mappedSkills);
@@ -67,7 +69,9 @@ router.get('/mod/:modId', async (req: Request, res: Response) => {
       charclass: skill.charclass,
       skilldesc: skill.skilldesc,
       modId: skill.modId,
-      modName: skill.mod?.name || 'Unknown'
+      modName: skill.mod?.name || 'Unknown',
+      reqlevel: skill.reqlevel,
+      maxlvl: skill.maxlvl
     }));
     
     res.json(mappedSkills);
@@ -97,7 +101,9 @@ router.get('/:id', async (req: Request, res: Response) => {
       charclass: skill.charclass,
       skilldesc: skill.skilldesc,
       modId: skill.modId,
-      modName: skill.mod?.name || 'Unknown'
+      modName: skill.mod?.name || 'Unknown',
+      reqlevel: skill.reqlevel,
+      maxlvl: skill.maxlvl
     };
     
     res.json(mappedSkill);
@@ -105,6 +111,50 @@ router.get('/:id', async (req: Request, res: Response) => {
     console.error('Error obteniendo skill por ID:', error);
     res.status(500).json({ 
       error: 'Error interno del servidor al obtener skill',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+// Actualizar skill por ID
+router.put('/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { reqlevel, maxlvl } = req.body;
+    
+    const skill = await skillRepository.findById(parseInt(id));
+    
+    if (!skill) {
+      return res.status(404).json({ error: 'Skill no encontrada' });
+    }
+    
+    // Actualizar solo los campos permitidos
+    if (reqlevel !== undefined) {
+      skill.reqlevel = parseInt(reqlevel) || 0;
+    }
+    if (maxlvl !== undefined) {
+      skill.maxlvl = parseInt(maxlvl) || 0;
+    }
+    
+    const updatedSkill = await skillRepository.save(skill);
+    
+    const mappedSkill = {
+      id: updatedSkill.id,
+      skill: updatedSkill.skill,
+      starId: updatedSkill.starId,
+      charclass: updatedSkill.charclass,
+      skilldesc: updatedSkill.skilldesc,
+      modId: updatedSkill.modId,
+      modName: updatedSkill.mod?.name || 'Unknown',
+      reqlevel: updatedSkill.reqlevel,
+      maxlvl: updatedSkill.maxlvl
+    };
+    
+    res.json(mappedSkill);
+  } catch (error) {
+    console.error('Error actualizando skill:', error);
+    res.status(500).json({ 
+      error: 'Error interno del servidor al actualizar skill',
       details: error instanceof Error ? error.message : 'Error desconocido'
     });
   }

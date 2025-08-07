@@ -51,5 +51,27 @@ export const skillService = {
       console.error('Error obteniendo skill por ID:', error);
       throw new Error('No se pudo obtener la skill');
     }
+  },
+
+  // Actualizar skill
+  async updateSkill(id: number, updates: { reqlevel?: number; maxlvl?: number }): Promise<Skill> {
+    try {
+      const response = await axios.put<Skill>(`${API_BASE_URL}/skills/${id}`, updates);
+      return response.data;
+    } catch (error) {
+      console.error('Error actualizando skill:', error);
+      throw new Error('No se pudo actualizar la skill');
+    }
+  },
+
+  // Generar archivo skills modificado
+  async generateModifiedSkillsFile(modId: number): Promise<{ filePath: string }> {
+    try {
+      const response = await axios.post<{ success: boolean; data: { filePath: string } }>(`${API_BASE_URL}/mods/${modId}/generate-modified-skills-file`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error generando archivo skills modificado:', error);
+      throw new Error('No se pudo generar el archivo skills modificado');
+    }
   }
 };

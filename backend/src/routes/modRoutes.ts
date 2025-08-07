@@ -15,6 +15,12 @@ router.post('/process', async (req: Request, res: Response) => {
 
     const result = await modService.processModFolder(folderPath);
     
+    // Determinar qué secciones habilitar basado en los archivos procesados
+    const enabledSections = ['stats-heroes']; // Siempre habilitado
+    if (result.skills.length > 0) {
+      enabledSections.push('skills');
+    }
+    
     res.json({
       success: true,
       message: `Mod "${result.mod.name}" procesado exitosamente`,
@@ -23,7 +29,8 @@ router.post('/process', async (req: Request, res: Response) => {
         filesFound: result.files.length,
         charStatsProcessed: result.charStats.length,
         skillsProcessed: result.skills.length,
-        files: result.files.map(f => f.name)
+        files: result.files.map(f => f.name),
+        enabledSections: enabledSections
       }
     });
   } catch (error) {
@@ -168,6 +175,32 @@ router.post('/:id/generate-modified-file', async (req: Request, res: Response) =
     console.error('Error en /api/mods/:id/generate-modified-file:', error);
     res.status(500).json({ 
       error: 'Error generando archivo modificado',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+// POST /api/mods/:id/generate-modified-skills-file - Generar archivo skillsmod.txt
+router.post('/:id/generate-modified-skills-file', async (req: Request, res: Response) => {
+  try {
+    const modId = parseInt(req.params.id);
+    if (isNaN(modId)) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
+
+    const filePath = await modService.generateModifiedSkillsFile(modId);
+    
+    res.json({
+      success: true,
+      message: 'Archivo skillsmod.txt generado exitosamente',
+      data: {
+        filePath
+      }
+    });
+  } catch (error) {
+    console.error('Error en /api/mods/:id/generate-modified-skills-file:', error);
+    res.status(500).json({ 
+      error: 'Error generando archivo skills modificado',
       details: error instanceof Error ? error.message : 'Error desconocido'
     });
   }

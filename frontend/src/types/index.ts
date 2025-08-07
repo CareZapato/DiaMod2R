@@ -111,6 +111,8 @@ export interface Skill {
   skilldesc: string;
   modId: number;
   modName: string;
+  reqlevel: number; // Nivel requerido
+  maxlvl: number; // Nivel máximo
   // Se pueden agregar más campos según necesidad
 }
 
@@ -123,6 +125,7 @@ export interface ProcessModResponse {
     charStatsProcessed: number;
     skillsProcessed: number;
     files: string[];
+    enabledSections: string[]; // Secciones que deben habilitarse
   };
   error?: string;
   details?: string;

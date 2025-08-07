@@ -5,6 +5,8 @@ interface ModContextType {
   selectedMod: Mod | null;
   setSelectedMod: (mod: Mod | null) => void;
   isModSelected: boolean;
+  enabledSections: string[];
+  setEnabledSections: (sections: string[]) => void;
 }
 
 const ModContext = createContext<ModContextType | undefined>(undefined);
@@ -23,11 +25,14 @@ interface ModProviderProps {
 
 export const ModProvider: React.FC<ModProviderProps> = ({ children }) => {
   const [selectedMod, setSelectedMod] = useState<Mod | null>(null);
+  const [enabledSections, setEnabledSections] = useState<string[]>([]);
 
   const value = {
     selectedMod,
     setSelectedMod,
     isModSelected: selectedMod !== null,
+    enabledSections,
+    setEnabledSections,
   };
 
   return (

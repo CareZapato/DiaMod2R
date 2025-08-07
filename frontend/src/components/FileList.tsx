@@ -18,15 +18,27 @@ const FileList: React.FC<FileListProps> = ({ files }) => {
     <div className="file-list">
       <h3>Archivos .txt encontrados ({files.length})</h3>
       <div className="files-grid">
-        {files.map((fileName, index) => (
-          <div key={index} className={`file-item ${fileName.toLowerCase() === 'charstats.txt' ? 'highlight' : ''}`}>
-            <span className="file-icon">📄</span>
-            <span className="file-name">{fileName}</span>
-            {fileName.toLowerCase() === 'charstats.txt' && (
-              <span className="processed-badge">✅ Procesado</span>
-            )}
-          </div>
-        ))}
+        {files.map((fileName, index) => {
+          const isCharStats = fileName.toLowerCase() === 'charstats.txt';
+          const isSkills = fileName.toLowerCase() === 'skills.txt';
+          const isRequired = isCharStats || isSkills;
+          
+          return (
+            <div key={index} className={`file-item ${isRequired ? 'highlight' : ''}`}>
+              <span className="file-icon">📄</span>
+              <span className="file-name">{fileName}</span>
+              {isCharStats && (
+                <span className="processed-badge">✅ CharStats</span>
+              )}
+              {isSkills && (
+                <span className="processed-badge">✅ Skills</span>
+              )}
+              {!isRequired && fileName.toLowerCase().endsWith('.txt') && (
+                <span className="optional-badge">📋 Opcional</span>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

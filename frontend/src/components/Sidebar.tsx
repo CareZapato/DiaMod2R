@@ -7,7 +7,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => {
-  const { selectedMod, isModSelected } = useModContext();
+  const { selectedMod, isModSelected, enabledSections } = useModContext();
 
   const openModFolder = async (folderPath: string) => {
     try {
@@ -41,49 +41,49 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => 
       id: 'stats-heroes',
       label: 'Stats Héroes',
       icon: '🏃‍♂️',
-      enabled: isModSelected,
+      enabled: isModSelected && enabledSections.includes('stats-heroes'),
       description: 'Gestionar estadísticas de personajes'
     },
     {
       id: 'runas',
       label: 'Runas',
       icon: '🗿',
-      enabled: isModSelected,
+      enabled: isModSelected && enabledSections.includes('runas'),
       description: 'Configurar runas y runewords'
     },
     {
       id: 'items',
       label: 'Items',
       icon: '⚔️',
-      enabled: isModSelected,
+      enabled: isModSelected && enabledSections.includes('items'),
       description: 'Gestionar objetos y equipamiento'
     },
     {
       id: 'skills',
       label: 'Habilidades',
       icon: '✨',
-      enabled: isModSelected,
+      enabled: isModSelected && enabledSections.includes('skills'),
       description: 'Configurar habilidades y árboles'
     },
     {
       id: 'monsters',
       label: 'Monstruos',
       icon: '👹',
-      enabled: isModSelected,
+      enabled: isModSelected && enabledSections.includes('monsters'),
       description: 'Configurar monstruos y jefes'
     },
     {
       id: 'levels',
       label: 'Niveles',
       icon: '🗺️',
-      enabled: isModSelected,
+      enabled: isModSelected && enabledSections.includes('levels'),
       description: 'Configurar mapas y niveles'
     },
     {
       id: 'treasures',
       label: 'Tesoros',
       icon: '💎',
-      enabled: isModSelected,
+      enabled: isModSelected && enabledSections.includes('treasures'),
       description: 'Configurar drops y tesoros'
     }
   ];

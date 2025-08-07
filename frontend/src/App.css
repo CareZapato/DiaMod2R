@@ -296,6 +296,31 @@ body {
   border-color: var(--error-color);
 }
 
+.error-details {
+  margin-top: 12px;
+}
+
+.error-list {
+  margin: 12px 0;
+  padding-left: 20px;
+  color: var(--error-color);
+}
+
+.error-item {
+  margin-bottom: 8px;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.error-item:last-child {
+  margin-bottom: 0;
+}
+
+.error-actions {
+  margin-top: 16px;
+  text-align: right;
+}
+
 .success-card {
   border-color: var(--success-color);
 }
@@ -537,6 +562,48 @@ body {
   color: var(--text-secondary);
 }
 
+.requirements-info {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: linear-gradient(135deg, #fff7cd, #fef5e7);
+  border: 1px solid #f6e05e;
+  border-radius: var(--border-radius);
+}
+
+.requirements-info h4 {
+  color: #744210;
+  margin: 0 0 10px 0;
+  font-size: 1rem;
+}
+
+.requirements-info ul {
+  margin: 0 0 10px 20px;
+  padding: 0;
+}
+
+.requirements-info li {
+  margin-bottom: 5px;
+  color: #744210;
+}
+
+.requirements-info strong {
+  color: #553c0a;
+}
+
+.requirements-info .note {
+  margin: 10px 0 0 0;
+  font-size: 0.85rem;
+  color: #744210;
+  font-style: italic;
+}
+
+.requirements-info code {
+  background: rgba(116, 66, 16, 0.1);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+}
+
 /* Archivos */
 .files-section {
   margin-top: 20px;
@@ -588,6 +655,26 @@ body {
 .processed-indicator {
   font-size: 0.875rem;
   color: var(--success-color);
+}
+
+.processed-badge {
+  padding: 4px 8px;
+  background-color: var(--success-color);
+  color: white;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.optional-badge {
+  padding: 4px 8px;
+  background-color: var(--info-color);
+  color: white;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-left: 8px;
 }
 
 /* Lista de Mods */

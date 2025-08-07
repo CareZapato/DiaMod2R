@@ -17,23 +17,75 @@ export class FileService {
    */
   async scanModFolder(modFolderPath: string): Promise<FileInfo[]> {
     try {
+      console.log(`🔍 Iniciando escaneo de carpeta del mod: ${modFolderPath}`);
+      
+      // Verificar que la ruta del mod existe
+      if (!fs.existsSync(modFolderPath)) {
+        throw new Error(`❌ La ruta del mod no existe: ${modFolderPath}`);
+      }
+      
+      // Listar contenido de la carpeta del mod
+      const modContents = fs.readdirSync(modFolderPath);
+      console.log(`📁 Contenido de la carpeta del mod:`, modContents);
+      
       const modFolderName = path.basename(modFolderPath);
+      console.log(`📝 Nombre del mod extraído: ${modFolderName}`);
+      
       const mpqFolderPath = path.join(modFolderPath, `${modFolderName}.mpq`);
+      console.log(`🔍 Buscando carpeta .mpq en: ${mpqFolderPath}`);
       
       // Verificar que existe la carpeta .mpq
       if (!fs.existsSync(mpqFolderPath)) {
+        console.log(`❌ No se encontró la carpeta .mpq esperada: ${modFolderName}.mpq`);
+        console.log(`📁 Carpetas disponibles en ${modFolderPath}:`, 
+          modContents.filter(item => {
+            const itemPath = path.join(modFolderPath, item);
+            return fs.statSync(itemPath).isDirectory();
+          })
+        );
         throw new Error(`No se encontró la carpeta ${modFolderName}.mpq en ${modFolderPath}`);
       }
+      
+      console.log(`✅ Carpeta .mpq encontrada: ${mpqFolderPath}`);
 
       const excelFolderPath = path.join(mpqFolderPath, 'data', 'global', 'excel');
+      console.log(`🔍 Buscando carpeta excel en: ${excelFolderPath}`);
       
       // Verificar que existe la carpeta excel
       if (!fs.existsSync(excelFolderPath)) {
+        console.log(`❌ No se encontró la carpeta data/global/excel`);
+        
+        // Verificar qué carpetas existen en .mpq
+        const mpqContents = fs.existsSync(mpqFolderPath) ? fs.readdirSync(mpqFolderPath) : [];
+        console.log(`📁 Contenido de ${mpqFolderPath}:`, mpqContents);
+        
+        // Verificar si existe la carpeta data
+        const dataPath = path.join(mpqFolderPath, 'data');
+        if (fs.existsSync(dataPath)) {
+          const dataContents = fs.readdirSync(dataPath);
+          console.log(`📁 Contenido de data/:`, dataContents);
+          
+          // Verificar si existe la carpeta global
+          const globalPath = path.join(dataPath, 'global');
+          if (fs.existsSync(globalPath)) {
+            const globalContents = fs.readdirSync(globalPath);
+            console.log(`📁 Contenido de global/:`, globalContents);
+          } else {
+            console.log(`❌ No se encontró la carpeta global/ en data/`);
+          }
+        } else {
+          console.log(`❌ No se encontró la carpeta data/ en la carpeta .mpq`);
+        }
+        
         throw new Error(`No se encontró la carpeta data/global/excel en ${mpqFolderPath}`);
       }
+      
+      console.log(`✅ Carpeta excel encontrada: ${excelFolderPath}`);
 
       // Leer archivos .txt en la carpeta excel
       const files = fs.readdirSync(excelFolderPath);
+      console.log(`📁 Archivos encontrados en excel/:`, files);
+      
       const txtFiles = files
         .filter(file => file.endsWith('.txt'))
         .map(file => ({
@@ -41,9 +93,19 @@ export class FileService {
           path: path.join(excelFolderPath, file)
         }));
 
+      console.log(`📄 Archivos .txt encontrados:`, txtFiles.map(f => f.name));
+      
+      // Verificar archivos obligatorios
+      const hasCharStats = txtFiles.some(f => f.name.toLowerCase() === 'charstats.txt');
+      const hasSkills = txtFiles.some(f => f.name.toLowerCase() === 'skills.txt');
+      
+      console.log(`📋 Verificación de archivos obligatorios:`);
+      console.log(`   ✅ charstats.txt: ${hasCharStats ? 'ENCONTRADO' : '❌ NO ENCONTRADO'}`);
+      console.log(`   ✅ skills.txt: ${hasSkills ? 'ENCONTRADO' : '❌ NO ENCONTRADO'}`);
+
       return txtFiles;
     } catch (error) {
-      console.error('Error escaneando carpeta del mod:', error);
+      console.error('❌ Error escaneando carpeta del mod:', error);
       throw error;
     }
   }
@@ -53,11 +115,32 @@ export class FileService {
    */
   async parseCharStatsFile(filePath: string): Promise<CharStat[]> {
     try {
+      console.log(`📖 Iniciando parsing de charstats.txt: ${filePath}`);
+      
+      // Verificar que el archivo existe
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`❌ El archivo charstats.txt no existe en la ruta: ${filePath}`);
+      }
+      
+      // Obtener información del archivo
+      const stats = fs.statSync(filePath);
+      console.log(`📊 Información del archivo charstats.txt:`);
+      console.log(`   📁 Ruta: ${filePath}`);
+      console.log(`   📏 Tamaño: ${stats.size} bytes`);
+      console.log(`   📅 Última modificación: ${stats.mtime}`);
+      
       const content = fs.readFileSync(filePath, 'utf-8');
+      console.log(`📄 Archivo leído, contenido: ${content.length} caracteres`);
+      
       const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      console.log(`📋 Líneas procesadas: ${lines.length} líneas válidas`);
       
       if (lines.length === 0) {
-        throw new Error('El archivo charstats.txt está vacío');
+        throw new Error('❌ El archivo charstats.txt está vacío');
+      }
+
+      if (lines.length < 2) {
+        throw new Error('❌ El archivo charstats.txt debe tener al menos una línea de headers y una línea de datos');
       }
 
       // La primera línea debería ser el header con los nombres de las columnas
@@ -203,11 +286,32 @@ export class FileService {
    */
   async parseSkillsFile(filePath: string): Promise<Skill[]> {
     try {
+      console.log(`📖 Iniciando parsing de skills.txt: ${filePath}`);
+      
+      // Verificar que el archivo existe
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`❌ El archivo skills.txt no existe en la ruta: ${filePath}`);
+      }
+      
+      // Obtener información del archivo
+      const stats = fs.statSync(filePath);
+      console.log(`📊 Información del archivo skills.txt:`);
+      console.log(`   📁 Ruta: ${filePath}`);
+      console.log(`   📏 Tamaño: ${stats.size} bytes`);
+      console.log(`   📅 Última modificación: ${stats.mtime}`);
+      
       const content = fs.readFileSync(filePath, 'utf-8');
+      console.log(`📄 Archivo leído, contenido: ${content.length} caracteres`);
+      
       const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      console.log(`📋 Líneas procesadas: ${lines.length} líneas válidas`);
       
       if (lines.length === 0) {
-        throw new Error('El archivo skills.txt está vacío');
+        throw new Error('❌ El archivo skills.txt está vacío');
+      }
+
+      if (lines.length < 2) {
+        throw new Error('❌ El archivo skills.txt debe tener al menos una línea de headers y una línea de datos');
       }
 
       // La primera línea debería ser el header con los nombres de las columnas
@@ -216,6 +320,11 @@ export class FileService {
       let isExpansion = false;
 
       console.log(`📋 Headers encontrados en skills.txt: ${headers.length} columnas`);
+      console.log(`📝 Primeras 10 columnas: ${headers.slice(0, 10).join(', ')}`);
+
+      let processedSkills = 0;
+      let skippedLines = 0;
+      let expansionLineFound = false;
 
       // Procesar cada línea después del header
       for (let i = 1; i < lines.length; i++) {
@@ -223,6 +332,7 @@ export class FileService {
         
         // Saltar líneas vacías
         if (!line) {
+          skippedLines++;
           continue;
         }
 
@@ -232,7 +342,9 @@ export class FileService {
         // Verificar si es la línea "Expansion" (primer campo = "Expansion")
         if (values[0] && values[0].toLowerCase().trim() === 'expansion') {
           isExpansion = true;
-          console.log('🔄 Detectada línea "Expansion" en skills.txt - Cambiando modo a expansion=true');
+          expansionLineFound = true;
+          console.log(`🔄 Detectada línea "Expansion" en línea ${i + 1} - Cambiando modo a expansion=true`);
+          skippedLines++;
           continue; // No guardar este registro, solo cambiar el flag
         }
         
@@ -543,15 +655,33 @@ export class FileService {
           skill.starEol = values[292] || '';
 
           skills.push(skill);
+          processedSkills++;
+
+          // Log cada 50 skills procesadas
+          if (processedSkills % 50 === 0) {
+            console.log(`   📊 Progreso: ${processedSkills} skills procesadas...`);
+          }
 
         } catch (error) {
           console.error(`❌ Error procesando línea ${i + 1} en skills.txt:`, error);
-          console.error(`Línea problemática: ${line}`);
+          console.error(`   📄 Línea problemática: ${line.substring(0, 100)}${line.length > 100 ? '...' : ''}`);
+          console.error(`   🔢 Valores encontrados: ${values.length} de ${headers.length} esperados`);
+          skippedLines++;
           continue; // Continuar con la siguiente línea
         }
       }
 
-      console.log(`✅ Skills.txt parseado exitosamente: ${skills.length} skills procesadas`);
+      console.log(`🎉 Skills.txt parseado exitosamente`);
+      console.log(`📊 Resumen del parsing:`);
+      console.log(`   ✅ Skills procesadas: ${skills.length}`);
+      console.log(`   ⏭️ Líneas omitidas: ${skippedLines}`);
+      console.log(`   🔄 Línea Expansion encontrada: ${expansionLineFound ? 'Sí' : 'No'}`);
+      console.log(`   📋 Total líneas procesadas: ${lines.length - 1} (excluyendo header)`);
+      
+      if (skills.length === 0) {
+        throw new Error('❌ No se pudo procesar ninguna skill del archivo skills.txt');
+      }
+
       return skills;
 
     } catch (error) {
@@ -646,6 +776,395 @@ export class FileService {
       return modFilePath;
     } catch (error) {
       console.error('❌ Error generando archivo charstatsmod.txt:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Genera el archivo skillsmod.txt con los cambios aplicados
+   */
+  async generateModifiedSkillsFile(skills: Skill[], originalFilePath: string): Promise<string> {
+    try {
+      const modFilePath = path.join(path.dirname(originalFilePath), 'skillsmod.txt');
+      
+      // Definir todas las 293 columnas del archivo skills.txt en el orden correcto
+      const columns = [
+        'skill', '*Id', 'charclass', 'skilldesc', 'srvstfunc', 'srvdofunc', 'srvstopfunc', 'prgstack',
+        'srvprgfunc1', 'srvprgfunc2', 'srvprgfunc3', 'prgcalc1', 'prgcalc2', 'prgcalc3', 'prgdam',
+        'srvmissile', 'decquant', 'lob', 'srvmissilea', 'srvmissileb', 'srvmissilec', 'useServerMissilesOnRemoteClients',
+        'srvoverlay', 'aurafilter', 'aurastate', 'auratargetstate', 'auralencalc', 'aurarangecalc',
+        'aurastat1', 'aurastatcalc1', 'aurastat2', 'aurastatcalc2', 'aurastat3', 'aurastatcalc3',
+        'aurastat4', 'aurastatcalc4', 'aurastat5', 'aurastatcalc5', 'aurastat6', 'aurastatcalc6',
+        'auraevent1', 'auraeventfunc1', 'auraevent2', 'auraeventfunc2', 'auraevent3', 'auraeventfunc3',
+        'passivestate', 'passiveitype', 'passivereqweaponcount', 'passivestat1', 'passivecalc1',
+        'passivestat2', 'passivecalc2', 'passivestat3', 'passivecalc3', 'passivestat4', 'passivecalc4',
+        'passivestat5', 'passivecalc5', 'passivestat6', 'passivecalc6', 'passivestat7', 'passivecalc7',
+        'passivestat8', 'passivecalc8', 'passivestat9', 'passivecalc9', 'passivestat10', 'passivecalc10',
+        'passivestat11', 'passivecalc11', 'passivestat12', 'passivecalc12', 'passivestat13', 'passivecalc13',
+        'passivestat14', 'passivecalc14', 'summon', 'pettype', 'petmax', 'summode', 'sumskill1', 'sumsk1calc',
+        'sumskill2', 'sumsk2calc', 'sumskill3', 'sumsk3calc', 'sumskill4', 'sumsk4calc', 'sumskill5', 'sumsk5calc',
+        'sumumod', 'sumoverlay', 'stsuccessonly', 'stsound', 'stsoundclass', 'stsounddelay', 'weaponsnd',
+        'dosound', 'dosoundA', 'dosoundB', 'tgtoverlay', 'tgtsound', 'prgoverlay', 'prgsound', 'castoverlay',
+        'cltoverlaya', 'cltoverlayb', 'cltstfunc', 'cltdofunc', 'cltstopfunc', 'cltprgfunc1', 'cltprgfunc2',
+        'cltprgfunc3', 'cltmissile', 'cltmissilea', 'cltmissileb', 'cltmissilec', 'cltmissiled', 'cltcalc1',
+        '*cltcalc1desc', 'cltcalc2', '*cltcalc2desc', 'cltcalc3', '*cltcalc3desc', 'warp', 'immediate',
+        'enhanceable', 'attackrank', 'noammo', 'range', 'weapsel', 'itypea1', 'itypea2', 'itypea3',
+        'etypea1', 'etypea2', 'itypeb1', 'itypeb2', 'itypeb3', 'etypeb1', 'etypeb2', 'anim', 'seqtrans',
+        'monanim', 'seqnum', 'seqinput', 'durability', 'UseAttackRate', 'LineOfSight', 'TargetableOnly',
+        'SearchEnemyXY', 'SearchEnemyNear', 'SearchOpenXY', 'SelectProc', 'TargetCorpse', 'TargetPet',
+        'TargetAlly', 'TargetItem', 'AttackNoMana', 'TgtPlaceCheck', 'KeepCursorStateOnKill', 'ContinueCastUnselected',
+        'ClearSelectedOnHold', 'ItemEffect', 'ItemCltEffect', 'ItemTgtDo', 'ItemTarget', 'ItemUseRestrict',
+        'ItemCheckStart', 'ItemCltCheckStart', 'ItemCastSound', 'ItemCastOverlay', 'skpoints', 'reqlevel',
+        'maxlvl', 'reqstr', 'reqdex', 'reqint', 'reqvit', 'reqskill1', 'reqskill2', 'reqskill3', 'restrict',
+        'State1', 'State2', 'State3', 'localdelay', 'globaldelay', 'leftskill', 'rightskill', 'repeat',
+        'alwayshit', 'usemanaondo', 'startmana', 'minmana', 'manashift', 'mana', 'lvlmana', 'interrupt',
+        'InTown', 'aura', 'periodic', 'perdelay', 'finishing', 'prgchargestocast', 'prgchargesconsumed',
+        'passive', 'progressive', 'scroll', 'calc1', '*calc1desc', 'calc2', '*calc2desc', 'calc3', '*calc3desc',
+        'calc4', '*calc4desc', 'calc5', '*calc5desc', 'calc6', '*calc6desc', 'Param1', '*Param1Description',
+        'Param2', '*Param2Description', 'Param3', '*Param3Description', 'Param4', '*Param4Description',
+        'Param5', '*Param5Description', 'Param6', '*Param6Description', 'Param7', '*Param7Description',
+        'Param8', '*Param8Description', 'Param9', '*Param9Description', 'Param10', '*Param10Description2',
+        'Param11', '*Param11Description', 'Param12', '*Param12Description', 'InGame', 'ToHit', 'LevToHit',
+        'ToHitCalc', 'ResultFlags', 'HitFlags', 'HitClass', 'Kick', 'HitShift', 'SrcDam', 'MinDam',
+        'MinLevDam1', 'MinLevDam2', 'MinLevDam3', 'MinLevDam4', 'MinLevDam5', 'MaxDam', 'MaxLevDam1',
+        'MaxLevDam2', 'MaxLevDam3', 'MaxLevDam4', 'MaxLevDam5', 'DmgSymPerCalc', 'EType', 'EMin',
+        'EMinLev1', 'EMinLev2', 'EMinLev3', 'EMinLev4', 'EMinLev5', 'EMax', 'EMaxLev1', 'EMaxLev2',
+        'EMaxLev3', 'EMaxLev4', 'EMaxLev5', 'EDmgSymPerCalc', 'ELen', 'ELevLen1', 'ELevLen2', 'ELevLen3',
+        'ELenSymPerCalc', 'aitype', 'aibonus', 'costMult', 'costAdd', '*eol'
+      ];
+
+      // Crear el contenido del archivo
+      let content = '';
+      
+      // Agregar header con nombres de columnas
+      content += columns.join('\t') + '\n';
+      
+      // Ordenar skills por ID para mantener el orden original
+      const sortedSkills = skills.sort((a, b) => a.id - b.id);
+      
+      // Función para convertir un Skill a línea de texto
+      const skillToLine = (skill: Skill): string => {
+        const values: string[] = [];
+        
+        // Mapear cada columna del skill a su valor correspondiente
+        const fieldMap: { [key: string]: string } = {
+          'skill': skill.skill,
+          '*Id': skill.starId,
+          'charclass': skill.charclass,
+          'skilldesc': skill.skilldesc,
+          'srvstfunc': skill.srvstfunc,
+          'srvdofunc': skill.srvdofunc,
+          'srvstopfunc': skill.srvstopfunc,
+          'prgstack': skill.prgstack.toString(),
+          'srvprgfunc1': skill.srvprgfunc1,
+          'srvprgfunc2': skill.srvprgfunc2,
+          'srvprgfunc3': skill.srvprgfunc3,
+          'prgcalc1': skill.prgcalc1,
+          'prgcalc2': skill.prgcalc2,
+          'prgcalc3': skill.prgcalc3,
+          'prgdam': skill.prgdam,
+          'srvmissile': skill.srvmissile,
+          'decquant': skill.decquant.toString(),
+          'lob': skill.lob.toString(),
+          'srvmissilea': skill.srvmissilea,
+          'srvmissileb': skill.srvmissileb,
+          'srvmissilec': skill.srvmissilec,
+          'useServerMissilesOnRemoteClients': skill.useServerMissilesOnRemoteClients.toString(),
+          'srvoverlay': skill.srvoverlay,
+          'aurafilter': skill.aurafilter,
+          'aurastate': skill.aurastate,
+          'auratargetstate': skill.auratargetstate,
+          'auralencalc': skill.auralencalc,
+          'aurarangecalc': skill.aurarangecalc,
+          'aurastat1': skill.aurastat1,
+          'aurastatcalc1': skill.aurastatcalc1,
+          'aurastat2': skill.aurastat2,
+          'aurastatcalc2': skill.aurastatcalc2,
+          'aurastat3': skill.aurastat3,
+          'aurastatcalc3': skill.aurastatcalc3,
+          'aurastat4': skill.aurastat4,
+          'aurastatcalc4': skill.aurastatcalc4,
+          'aurastat5': skill.aurastat5,
+          'aurastatcalc5': skill.aurastatcalc5,
+          'aurastat6': skill.aurastat6,
+          'aurastatcalc6': skill.aurastatcalc6,
+          'auraevent1': skill.auraevent1,
+          'auraeventfunc1': skill.auraeventfunc1,
+          'auraevent2': skill.auraevent2,
+          'auraeventfunc2': skill.auraeventfunc2,
+          'auraevent3': skill.auraevent3,
+          'auraeventfunc3': skill.auraeventfunc3,
+          'passivestate': skill.passivestate,
+          'passiveitype': skill.passiveitype,
+          'passivereqweaponcount': skill.passivereqweaponcount.toString(),
+          'passivestat1': skill.passivestat1,
+          'passivecalc1': skill.passivecalc1,
+          'passivestat2': skill.passivestat2,
+          'passivecalc2': skill.passivecalc2,
+          'passivestat3': skill.passivestat3,
+          'passivecalc3': skill.passivecalc3,
+          'passivestat4': skill.passivestat4,
+          'passivecalc4': skill.passivecalc4,
+          'passivestat5': skill.passivestat5,
+          'passivecalc5': skill.passivecalc5,
+          'passivestat6': skill.passivestat6,
+          'passivecalc6': skill.passivecalc6,
+          'passivestat7': skill.passivestat7,
+          'passivecalc7': skill.passivecalc7,
+          'passivestat8': skill.passivestat8,
+          'passivecalc8': skill.passivecalc8,
+          'passivestat9': skill.passivestat9,
+          'passivecalc9': skill.passivecalc9,
+          'passivestat10': skill.passivestat10,
+          'passivecalc10': skill.passivecalc10,
+          'passivestat11': skill.passivestat11,
+          'passivecalc11': skill.passivecalc11,
+          'passivestat12': skill.passivestat12,
+          'passivecalc12': skill.passivecalc12,
+          'passivestat13': skill.passivestat13,
+          'passivecalc13': skill.passivecalc13,
+          'passivestat14': skill.passivestat14,
+          'passivecalc14': skill.passivecalc14,
+          'summon': skill.summon,
+          'pettype': skill.pettype,
+          'petmax': skill.petmax.toString(),
+          'summode': skill.summode,
+          'sumskill1': skill.sumskill1,
+          'sumsk1calc': skill.sumsk1calc,
+          'sumskill2': skill.sumskill2,
+          'sumsk2calc': skill.sumsk2calc,
+          'sumskill3': skill.sumskill3,
+          'sumsk3calc': skill.sumsk3calc,
+          'sumskill4': skill.sumskill4,
+          'sumsk4calc': skill.sumsk4calc,
+          'sumskill5': skill.sumskill5,
+          'sumsk5calc': skill.sumsk5calc,
+          'sumumod': skill.sumumod,
+          'sumoverlay': skill.sumoverlay,
+          'stsuccessonly': skill.stsuccessonly.toString(),
+          'stsound': skill.stsound,
+          'stsoundclass': skill.stsoundclass,
+          'stsounddelay': skill.stsounddelay.toString(),
+          'weaponsnd': skill.weaponsnd,
+          'dosound': skill.dosound,
+          'dosoundA': skill.dosoundA,
+          'dosoundB': skill.dosoundB,
+          'tgtoverlay': skill.tgtoverlay,
+          'tgtsound': skill.tgtsound,
+          'prgoverlay': skill.prgoverlay,
+          'prgsound': skill.prgsound,
+          'castoverlay': skill.castoverlay,
+          'cltoverlaya': skill.cltoverlaya,
+          'cltoverlayb': skill.cltoverlayb,
+          'cltstfunc': skill.cltstfunc,
+          'cltdofunc': skill.cltdofunc,
+          'cltstopfunc': skill.cltstopfunc,
+          'cltprgfunc1': skill.cltprgfunc1,
+          'cltprgfunc2': skill.cltprgfunc2,
+          'cltprgfunc3': skill.cltprgfunc3,
+          'cltmissile': skill.cltmissile,
+          'cltmissilea': skill.cltmissilea,
+          'cltmissileb': skill.cltmissileb,
+          'cltmissilec': skill.cltmissilec,
+          'cltmissiled': skill.cltmissiled,
+          'cltcalc1': skill.cltcalc1,
+          '*cltcalc1desc': skill.starCltcalc1Desc,
+          'cltcalc2': skill.cltcalc2,
+          '*cltcalc2desc': skill.starCltcalc2Desc,
+          'cltcalc3': skill.cltcalc3,
+          '*cltcalc3desc': skill.starCltcalc3Desc,
+          'warp': skill.warp.toString(),
+          'immediate': skill.immediate.toString(),
+          'enhanceable': skill.enhanceable.toString(),
+          'attackrank': skill.attackrank.toString(),
+          'noammo': skill.noammo.toString(),
+          'range': skill.range.toString(),
+          'weapsel': skill.weapsel.toString(),
+          'itypea1': skill.itypea1,
+          'itypea2': skill.itypea2,
+          'itypea3': skill.itypea3,
+          'etypea1': skill.etypea1,
+          'etypea2': skill.etypea2,
+          'itypeb1': skill.itypeb1,
+          'itypeb2': skill.itypeb2,
+          'itypeb3': skill.itypeb3,
+          'etypeb1': skill.etypeb1,
+          'etypeb2': skill.etypeb2,
+          'anim': skill.anim,
+          'seqtrans': skill.seqtrans,
+          'monanim': skill.monanim,
+          'seqnum': skill.seqnum.toString(),
+          'seqinput': skill.seqinput.toString(),
+          'durability': skill.durability.toString(),
+          'UseAttackRate': skill.UseAttackRate.toString(),
+          'LineOfSight': skill.LineOfSight.toString(),
+          'TargetableOnly': skill.TargetableOnly.toString(),
+          'SearchEnemyXY': skill.SearchEnemyXY.toString(),
+          'SearchEnemyNear': skill.SearchEnemyNear.toString(),
+          'SearchOpenXY': skill.SearchOpenXY.toString(),
+          'SelectProc': skill.SelectProc.toString(),
+          'TargetCorpse': skill.TargetCorpse.toString(),
+          'TargetPet': skill.TargetPet.toString(),
+          'TargetAlly': skill.TargetAlly.toString(),
+          'TargetItem': skill.TargetItem.toString(),
+          'AttackNoMana': skill.AttackNoMana.toString(),
+          'TgtPlaceCheck': skill.TgtPlaceCheck.toString(),
+          'KeepCursorStateOnKill': skill.KeepCursorStateOnKill.toString(),
+          'ContinueCastUnselected': skill.ContinueCastUnselected.toString(),
+          'ClearSelectedOnHold': skill.ClearSelectedOnHold.toString(),
+          'ItemEffect': skill.ItemEffect.toString(),
+          'ItemCltEffect': skill.ItemCltEffect.toString(),
+          'ItemTgtDo': skill.ItemTgtDo.toString(),
+          'ItemTarget': skill.ItemTarget.toString(),
+          'ItemUseRestrict': skill.ItemUseRestrict.toString(),
+          'ItemCheckStart': skill.ItemCheckStart.toString(),
+          'ItemCltCheckStart': skill.ItemCltCheckStart.toString(),
+          'ItemCastSound': skill.ItemCastSound,
+          'ItemCastOverlay': skill.ItemCastOverlay,
+          'skpoints': skill.skpoints.toString(),
+          'reqlevel': skill.reqlevel.toString(),
+          'maxlvl': skill.maxlvl.toString(),
+          'reqstr': skill.reqstr.toString(),
+          'reqdex': skill.reqdex.toString(),
+          'reqint': skill.reqint.toString(),
+          'reqvit': skill.reqvit.toString(),
+          'reqskill1': skill.reqskill1,
+          'reqskill2': skill.reqskill2,
+          'reqskill3': skill.reqskill3,
+          'restrict': skill.restrict,
+          'State1': skill.State1,
+          'State2': skill.State2,
+          'State3': skill.State3,
+          'localdelay': skill.localdelay.toString(),
+          'globaldelay': skill.globaldelay.toString(),
+          'leftskill': skill.leftskill.toString(),
+          'rightskill': skill.rightskill.toString(),
+          'repeat': skill.repeat.toString(),
+          'alwayshit': skill.alwayshit.toString(),
+          'usemanaondo': skill.usemanaondo.toString(),
+          'startmana': skill.startmana.toString(),
+          'minmana': skill.minmana.toString(),
+          'manashift': skill.manashift.toString(),
+          'mana': skill.mana.toString(),
+          'lvlmana': skill.lvlmana.toString(),
+          'interrupt': skill.interrupt.toString(),
+          'InTown': skill.InTown.toString(),
+          'aura': skill.aura.toString(),
+          'periodic': skill.periodic.toString(),
+          'perdelay': skill.perdelay.toString(),
+          'finishing': skill.finishing.toString(),
+          'prgchargestocast': skill.prgchargestocast.toString(),
+          'prgchargesconsumed': skill.prgchargesconsumed.toString(),
+          'passive': skill.passive.toString(),
+          'progressive': skill.progressive.toString(),
+          'scroll': skill.scroll.toString(),
+          'calc1': skill.calc1,
+          '*calc1desc': skill.starCalc1Desc,
+          'calc2': skill.calc2,
+          '*calc2desc': skill.starCalc2Desc,
+          'calc3': skill.calc3,
+          '*calc3desc': skill.starCalc3Desc,
+          'calc4': skill.calc4,
+          '*calc4desc': skill.starCalc4Desc,
+          'calc5': skill.calc5,
+          '*calc5desc': skill.starCalc5Desc,
+          'calc6': skill.calc6,
+          '*calc6desc': skill.starCalc6Desc,
+          'Param1': skill.Param1,
+          '*Param1Description': skill.starParam1Description,
+          'Param2': skill.Param2,
+          '*Param2Description': skill.starParam2Description,
+          'Param3': skill.Param3,
+          '*Param3Description': skill.starParam3Description,
+          'Param4': skill.Param4,
+          '*Param4Description': skill.starParam4Description,
+          'Param5': skill.Param5,
+          '*Param5Description': skill.starParam5Description,
+          'Param6': skill.Param6,
+          '*Param6Description': skill.starParam6Description,
+          'Param7': skill.Param7,
+          '*Param7Description': skill.starParam7Description,
+          'Param8': skill.Param8,
+          '*Param8Description': skill.starParam8Description,
+          'Param9': skill.Param9,
+          '*Param9Description': skill.starParam9Description,
+          'Param10': skill.Param10,
+          '*Param10Description2': skill.starParam10Description2,
+          'Param11': skill.Param11,
+          '*Param11Description': skill.starParam11Description,
+          'Param12': skill.Param12,
+          '*Param12Description': skill.starParam12Description,
+          'InGame': skill.InGame.toString(),
+          'ToHit': skill.ToHit,
+          'LevToHit': skill.LevToHit,
+          'ToHitCalc': skill.ToHitCalc,
+          'ResultFlags': skill.ResultFlags.toString(),
+          'HitFlags': skill.HitFlags.toString(),
+          'HitClass': skill.HitClass.toString(),
+          'Kick': skill.Kick.toString(),
+          'HitShift': skill.HitShift.toString(),
+          'SrcDam': skill.SrcDam.toString(),
+          'MinDam': skill.MinDam,
+          'MinLevDam1': skill.MinLevDam1,
+          'MinLevDam2': skill.MinLevDam2,
+          'MinLevDam3': skill.MinLevDam3,
+          'MinLevDam4': skill.MinLevDam4,
+          'MinLevDam5': skill.MinLevDam5,
+          'MaxDam': skill.MaxDam,
+          'MaxLevDam1': skill.MaxLevDam1,
+          'MaxLevDam2': skill.MaxLevDam2,
+          'MaxLevDam3': skill.MaxLevDam3,
+          'MaxLevDam4': skill.MaxLevDam4,
+          'MaxLevDam5': skill.MaxLevDam5,
+          'DmgSymPerCalc': skill.DmgSymPerCalc,
+          'EType': skill.EType,
+          'EMin': skill.EMin,
+          'EMinLev1': skill.EMinLev1,
+          'EMinLev2': skill.EMinLev2,
+          'EMinLev3': skill.EMinLev3,
+          'EMinLev4': skill.EMinLev4,
+          'EMinLev5': skill.EMinLev5,
+          'EMax': skill.EMax,
+          'EMaxLev1': skill.EMaxLev1,
+          'EMaxLev2': skill.EMaxLev2,
+          'EMaxLev3': skill.EMaxLev3,
+          'EMaxLev4': skill.EMaxLev4,
+          'EMaxLev5': skill.EMaxLev5,
+          'EDmgSymPerCalc': skill.EDmgSymPerCalc,
+          'ELen': skill.ELen,
+          'ELevLen1': skill.ELevLen1,
+          'ELevLen2': skill.ELevLen2,
+          'ELevLen3': skill.ELevLen3,
+          'ELenSymPerCalc': skill.ELenSymPerCalc,
+          'aitype': skill.aitype.toString(),
+          'aibonus': skill.aibonus,
+          'costMult': skill.costMult.toString(),
+          'costAdd': skill.costAdd.toString(),
+          '*eol': skill.starEol
+        };
+        
+        for (const column of columns) {
+          const value = fieldMap[column] || '';
+          values.push(value);
+        }
+        
+        return values.join('\t');
+      };
+      
+      // Agregar todas las skills
+      for (const skill of sortedSkills) {
+        content += skillToLine(skill) + '\n';
+      }
+      
+      // Escribir el archivo
+      fs.writeFileSync(modFilePath, content, 'utf-8');
+      
+      console.log(`✅ Archivo skillsmod.txt generado exitosamente en: ${modFilePath}`);
+      console.log(`📊 Skills modificadas: ${sortedSkills.length} registros`);
+      
+      return modFilePath;
+    } catch (error) {
+      console.error('❌ Error generando archivo skillsmod.txt:', error);
       throw error;
     }
   }
