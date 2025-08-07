@@ -165,10 +165,23 @@ router.put('/skills/:id', async (req: Request, res: Response) => {
     const updateData = req.body;
     const updatedSkill = await modService.updateSkill(skillId, updateData);
     
+    // Mapear la respuesta para incluir modName como en skillRoutes
+    const mappedSkill = {
+      id: updatedSkill.id,
+      skill: updatedSkill.skill,
+      starId: updatedSkill.starId,
+      charclass: updatedSkill.charclass,
+      skilldesc: updatedSkill.skilldesc,
+      modId: updatedSkill.modId,
+      modName: updatedSkill.mod?.name || 'Unknown',
+      reqlevel: updatedSkill.reqlevel,
+      maxlvl: updatedSkill.maxlvl
+    };
+    
     res.json({
       success: true,
       message: 'Skill actualizada exitosamente',
-      data: updatedSkill
+      data: mappedSkill
     });
   } catch (error) {
     console.error('Error en /api/mods/skills/:id:', error);

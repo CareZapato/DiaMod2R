@@ -239,7 +239,15 @@ export class ModService {
     // Actualizar solo los campos proporcionados
     Object.assign(existingSkill, updateData);
     
-    return await this.skillRepository.save(existingSkill);
+    const updatedSkill = await this.skillRepository.save(existingSkill);
+    
+    // Cargar la skill actualizada con la relación del mod
+    const skillWithMod = await this.skillRepository.findById(updatedSkill.id);
+    if (!skillWithMod) {
+      throw new Error(`No se pudo cargar la skill actualizada con información del mod`);
+    }
+    
+    return skillWithMod;
   }
 
   /**

@@ -42,6 +42,11 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
   // Para el incremento rápido con botones mantenidos
   const [incrementIntervals, setIncrementIntervals] = useState<{ [key: string]: NodeJS.Timeout }>({});
   
+  // Estados para paginación y vista
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12); // Cards por página
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
+  
   // Filtros
   const [selectedMod, setSelectedMod] = useState<number | ''>('');
   const [selectedCharClass, setSelectedCharClass] = useState<string>('');
@@ -57,6 +62,19 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
     });
     return Array.from(classes).sort();
   }, [skills]);
+
+  // Lógica de paginación
+  const totalPages = Math.ceil(filteredSkills.length / itemsPerPage);
+  const paginatedSkills = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredSkills.slice(startIndex, endIndex);
+  }, [filteredSkills, currentPage, itemsPerPage]);
+
+  // Resetear página cuando cambian los filtros
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedMod, selectedCharClass, searchTerm]);
 
   useEffect(() => {
     loadSkills();
@@ -249,9 +267,12 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
       if (response.success && response.data) {
         const updatedSkill = response.data;
         
-        // Actualizar la skill en la lista local
+        // Actualizar la skill en la lista local, preservando modName si no viene en la respuesta
         setSkills(prev => prev.map(s => 
-          s.id === skillId ? updatedSkill : s
+          s.id === skillId ? {
+            ...updatedSkill,
+            modName: updatedSkill.modName || s.modName // Preservar modName original si no viene
+          } : s
         ));
 
         // Trackear cambios
@@ -402,6 +423,42 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
     return classMap[charclass.toLowerCase()] || charclass;
   };
 
+  // Funciones de paginación
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  const goToFirstPage = () => goToPage(1);
+  const goToLastPage = () => goToPage(totalPages);
+  const goToPreviousPage = () => goToPage(currentPage - 1);
+  const goToNextPage = () => goToPage(currentPage + 1);
+
+  const getPageNumbers = () => {
+    const delta = 2;
+    const range = [];
+    const rangeWithDots = [];
+
+    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
+      range.push(i);
+    }
+
+    if (currentPage - delta > 2) {
+      rangeWithDots.push(1, '...');
+    } else {
+      rangeWithDots.push(1);
+    }
+
+    rangeWithDots.push(...range);
+
+    if (currentPage + delta < totalPages - 1) {
+      rangeWithDots.push('...', totalPages);
+    } else if (totalPages > 1) {
+      rangeWithDots.push(totalPages);
+    }
+
+    return rangeWithDots;
+  };
+
   if (loading) {
     return (
       <div className="skills-view">
@@ -432,7 +489,14 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
       <div className="skills-header">
         <div className="header-left">
           <h2>Habilidades del Mod</h2>
-          <p>Total: {filteredSkills.length} habilidades</p>
+          <p>
+            Total: {filteredSkills.length} habilidades
+            {filteredSkills.length > 0 && (
+              <span className="pagination-info">
+                {' '} | Página {currentPage} de {totalPages} | Mostrando {paginatedSkills.length} de {filteredSkills.length}
+              </span>
+            )}
+          </p>
           {skillChanges.length > 0 && (
             <p className="changes-info">
               ✏️ {skillChanges.length} cambio{skillChanges.length !== 1 ? 's' : ''} sin exportar
@@ -440,6 +504,39 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
           )}
         </div>
         <div className="header-right">
+          <div className="view-controls">
+            <div className="view-mode-selector">
+              <button 
+                onClick={() => setViewMode('cards')}
+                className={`view-mode-btn ${viewMode === 'cards' ? 'active' : ''}`}
+                title="Vista de tarjetas"
+              >
+                📄
+              </button>
+              <button 
+                onClick={() => setViewMode('list')}
+                className={`view-mode-btn ${viewMode === 'list' ? 'active' : ''}`}
+                title="Vista de lista"
+              >
+                📋
+              </button>
+            </div>
+            <div className="items-per-page">
+              <label>Por página:</label>
+              <select 
+                value={itemsPerPage} 
+                onChange={(e) => {
+                  setItemsPerPage(parseInt(e.target.value));
+                  setCurrentPage(1);
+                }}
+              >
+                <option value={6}>6</option>
+                <option value={12}>12</option>
+                <option value={24}>24</option>
+                <option value={48}>48</option>
+              </select>
+            </div>
+          </div>
           <button 
             onClick={generateFile}
             disabled={generatingFile || skillChanges.length === 0}
@@ -531,162 +628,359 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
             <p>No se encontraron habilidades con los filtros aplicados.</p>
           </div>
         ) : (
-          <div className="skills-grid">
-            {filteredSkills.map(skill => {
-              const isEditing = editingSkills[skill.id];
-              const isSaving = savingSkills.has(skill.id);
-              
-              return (
-                <div 
-                  key={skill.id} 
-                  className={`skill-card ${isEditing ? 'editing' : ''}`}
-                  onClick={(e) => handleCardClick(skill, e)}
-                  style={{ cursor: isEditing ? 'default' : 'pointer' }}
-                >
-                  <div className="skill-header">
-                    <h3 className="skill-name">{skill.skill}</h3>
-                    <span className="skill-star-id">*{skill.starId}</span>
-                  </div>
+          <>
+            {/* Vista de Cards */}
+            {viewMode === 'cards' && (
+              <div className="skills-grid">
+                {paginatedSkills.map(skill => {
+                  const isEditing = editingSkills[skill.id];
+                  const isSaving = savingSkills.has(skill.id);
                   
-                  <div className="skill-details">
-                    <div className="skill-description">
-                      {skill.skilldesc || 'Sin descripción'}
-                    </div>
-                    
-                    <div className="skill-requirements">
-                      <div className="skill-requirement">
-                        <label>Nivel Requerido:</label>
-                        {isEditing ? (
-                          <div className="value-editor">
-                            <button 
-                              onClick={() => updateEditingValue(skill.id, 'reqlevel', Math.max(0, isEditing.reqlevel - 1))}
-                              onMouseDown={() => startIncrement(skill.id, 'reqlevel', 'down')}
-                              onMouseUp={() => stopIncrement(skill.id, 'reqlevel', 'down')}
-                              onMouseLeave={() => stopIncrement(skill.id, 'reqlevel', 'down')}
-                              disabled={isSaving}
-                              className="increment-button"
-                            >
-                              -
-                            </button>
-                            <input
-                              type="number"
-                              value={isEditing.reqlevel}
-                              onChange={(e) => updateEditingValue(skill.id, 'reqlevel', parseInt(e.target.value) || 0)}
-                              min="0"
-                              max="99"
-                              disabled={isSaving}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <button 
-                              onClick={() => updateEditingValue(skill.id, 'reqlevel', Math.min(99, isEditing.reqlevel + 1))}
-                              onMouseDown={() => startIncrement(skill.id, 'reqlevel', 'up')}
-                              onMouseUp={() => stopIncrement(skill.id, 'reqlevel', 'up')}
-                              onMouseLeave={() => stopIncrement(skill.id, 'reqlevel', 'up')}
-                              disabled={isSaving}
-                              className="increment-button"
-                            >
-                              +
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="skill-value">{skill.reqlevel}</span>
-                        )}
+                  return (
+                    <div 
+                      key={skill.id} 
+                      className={`skill-card compact ${isEditing ? 'editing' : ''}`}
+                      onClick={(e) => handleCardClick(skill, e)}
+                      style={{ cursor: isEditing ? 'default' : 'pointer' }}
+                    >
+                      <div className="skill-header">
+                        <div className="skill-title">
+                          <span className="skill-star-id">*{skill.starId}</span>
+                          <h4 className="skill-name">{skill.skill}</h4>
+                        </div>
                       </div>
                       
-                      <div className="skill-requirement">
-                        <label>Nivel Máximo:</label>
-                        {isEditing ? (
-                          <div className="value-editor">
-                            <button 
-                              onClick={() => updateEditingValue(skill.id, 'maxlvl', Math.max(1, isEditing.maxlvl - 1))}
-                              onMouseDown={() => startIncrement(skill.id, 'maxlvl', 'down')}
-                              onMouseUp={() => stopIncrement(skill.id, 'maxlvl', 'down')}
-                              onMouseLeave={() => stopIncrement(skill.id, 'maxlvl', 'down')}
-                              disabled={isSaving}
-                              className="increment-button"
-                            >
-                              -
-                            </button>
-                            <input
-                              type="number"
-                              value={isEditing.maxlvl}
-                              onChange={(e) => updateEditingValue(skill.id, 'maxlvl', parseInt(e.target.value) || 1)}
-                              min="1"
-                              max="99"
-                              disabled={isSaving}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <button 
-                              onClick={() => updateEditingValue(skill.id, 'maxlvl', Math.min(99, isEditing.maxlvl + 1))}
-                              onMouseDown={() => startIncrement(skill.id, 'maxlvl', 'up')}
-                              onMouseUp={() => stopIncrement(skill.id, 'maxlvl', 'up')}
-                              onMouseLeave={() => stopIncrement(skill.id, 'maxlvl', 'up')}
-                              disabled={isSaving}
-                              className="increment-button"
-                            >
-                              +
-                            </button>
+                      <div className="skill-details">
+                        <div className="skill-requirements">
+                          <div className="skill-requirement">
+                            <label>Nivel requerido:</label>
+                            {isEditing ? (
+                              <div className="value-editor">
+                                <button 
+                                  onClick={() => updateEditingValue(skill.id, 'reqlevel', Math.max(0, isEditing.reqlevel - 1))}
+                                  onMouseDown={() => startIncrement(skill.id, 'reqlevel', 'down')}
+                                  onMouseUp={() => stopIncrement(skill.id, 'reqlevel', 'down')}
+                                  onMouseLeave={() => stopIncrement(skill.id, 'reqlevel', 'down')}
+                                  disabled={isSaving}
+                                  className="increment-button"
+                                >
+                                  -
+                                </button>
+                                <input
+                                  type="number"
+                                  value={isEditing.reqlevel}
+                                  onChange={(e) => updateEditingValue(skill.id, 'reqlevel', parseInt(e.target.value) || 0)}
+                                  min="0"
+                                  max="99"
+                                  disabled={isSaving}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                                <button 
+                                  onClick={() => updateEditingValue(skill.id, 'reqlevel', Math.min(99, isEditing.reqlevel + 1))}
+                                  onMouseDown={() => startIncrement(skill.id, 'reqlevel', 'up')}
+                                  onMouseUp={() => stopIncrement(skill.id, 'reqlevel', 'up')}
+                                  onMouseLeave={() => stopIncrement(skill.id, 'reqlevel', 'up')}
+                                  disabled={isSaving}
+                                  className="increment-button"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="skill-value">{skill.reqlevel}</span>
+                            )}
                           </div>
-                        ) : (
-                          <span className="skill-value">{skill.maxlvl}</span>
-                        )}
+                          
+                          <div className="skill-requirement">
+                            <label>Nivel máximo:</label>
+                            {isEditing ? (
+                              <div className="value-editor">
+                                <button 
+                                  onClick={() => updateEditingValue(skill.id, 'maxlvl', Math.max(1, isEditing.maxlvl - 1))}
+                                  onMouseDown={() => startIncrement(skill.id, 'maxlvl', 'down')}
+                                  onMouseUp={() => stopIncrement(skill.id, 'maxlvl', 'down')}
+                                  onMouseLeave={() => stopIncrement(skill.id, 'maxlvl', 'down')}
+                                  disabled={isSaving}
+                                  className="increment-button"
+                                >
+                                  -
+                                </button>
+                                <input
+                                  type="number"
+                                  value={isEditing.maxlvl}
+                                  onChange={(e) => updateEditingValue(skill.id, 'maxlvl', parseInt(e.target.value) || 1)}
+                                  min="1"
+                                  max="99"
+                                  disabled={isSaving}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                                <button 
+                                  onClick={() => updateEditingValue(skill.id, 'maxlvl', Math.min(99, isEditing.maxlvl + 1))}
+                                  onMouseDown={() => startIncrement(skill.id, 'maxlvl', 'up')}
+                                  onMouseUp={() => stopIncrement(skill.id, 'maxlvl', 'up')}
+                                  onMouseLeave={() => stopIncrement(skill.id, 'maxlvl', 'up')}
+                                  disabled={isSaving}
+                                  className="increment-button"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="skill-value">{skill.maxlvl}</span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="skill-meta">
+                          <div className="skill-class">
+                            {skill.charclass ? getCharClassDisplayName(skill.charclass) : 'Sin clase'}
+                          </div>
+                        </div>
+                        
+                        <div className="skill-actions">
+                          {isEditing ? (
+                            <>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  saveSkill(skill.id);
+                                }}
+                                disabled={isSaving}
+                                className="save-button"
+                              >
+                                {isSaving ? '💾' : '✓'}
+                              </button>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  cancelEditing(skill.id);
+                                }}
+                                disabled={isSaving}
+                                className="cancel-button"
+                              >
+                                ✕
+                              </button>
+                            </>
+                          ) : (
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                startEditing(skill);
+                              }}
+                              className="edit-button"
+                            >
+                              ✏️
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    
-                    <div className="skill-meta">
-                      <div className="skill-class">
-                        <strong>Clase:</strong> {
-                          skill.charclass ? 
-                          getCharClassDisplayName(skill.charclass) : 
-                          <span className="no-class">Sin clase</span>
-                        }
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Vista de Lista */}
+            {viewMode === 'list' && (
+              <div className="skills-list-view">
+                {paginatedSkills.map(skill => {
+                  const isEditing = editingSkills[skill.id];
+                  const isSaving = savingSkills.has(skill.id);
+                  
+                  return (
+                    <div 
+                      key={skill.id} 
+                      className={`skill-row ${isEditing ? 'editing' : ''}`}
+                      onClick={(e) => handleCardClick(skill, e)}
+                      style={{ cursor: isEditing ? 'default' : 'pointer' }}
+                    >
+                      <div className="skill-row-main">
+                        <div className="skill-info">
+                          <span className="skill-star-id">*{skill.starId}</span>
+                          <h4 className="skill-name">{skill.skill}</h4>
+                          <span className="skill-class">
+                            {skill.charclass ? getCharClassDisplayName(skill.charclass) : 'Sin clase'}
+                          </span>
+                        </div>
+                        
+                        <div className="skill-values">
+                          <div className="skill-requirement">
+                            <label>Nivel requerido:</label>
+                            {isEditing ? (
+                              <div className="value-editor">
+                                <button 
+                                  onClick={() => updateEditingValue(skill.id, 'reqlevel', Math.max(0, isEditing.reqlevel - 1))}
+                                  onMouseDown={() => startIncrement(skill.id, 'reqlevel', 'down')}
+                                  onMouseUp={() => stopIncrement(skill.id, 'reqlevel', 'down')}
+                                  onMouseLeave={() => stopIncrement(skill.id, 'reqlevel', 'down')}
+                                  disabled={isSaving}
+                                  className="increment-button"
+                                >
+                                  -
+                                </button>
+                                <input
+                                  type="number"
+                                  value={isEditing.reqlevel}
+                                  onChange={(e) => updateEditingValue(skill.id, 'reqlevel', parseInt(e.target.value) || 0)}
+                                  min="0"
+                                  max="99"
+                                  disabled={isSaving}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                                <button 
+                                  onClick={() => updateEditingValue(skill.id, 'reqlevel', Math.min(99, isEditing.reqlevel + 1))}
+                                  onMouseDown={() => startIncrement(skill.id, 'reqlevel', 'up')}
+                                  onMouseUp={() => stopIncrement(skill.id, 'reqlevel', 'up')}
+                                  onMouseLeave={() => stopIncrement(skill.id, 'reqlevel', 'up')}
+                                  disabled={isSaving}
+                                  className="increment-button"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="skill-value">{skill.reqlevel}</span>
+                            )}
+                          </div>
+                          
+                          <div className="skill-requirement">
+                            <label>Nivel máximo:</label>
+                            {isEditing ? (
+                              <div className="value-editor">
+                                <button 
+                                  onClick={() => updateEditingValue(skill.id, 'maxlvl', Math.max(1, isEditing.maxlvl - 1))}
+                                  onMouseDown={() => startIncrement(skill.id, 'maxlvl', 'down')}
+                                  onMouseUp={() => stopIncrement(skill.id, 'maxlvl', 'down')}
+                                  onMouseLeave={() => stopIncrement(skill.id, 'maxlvl', 'down')}
+                                  disabled={isSaving}
+                                  className="increment-button"
+                                >
+                                  -
+                                </button>
+                                <input
+                                  type="number"
+                                  value={isEditing.maxlvl}
+                                  onChange={(e) => updateEditingValue(skill.id, 'maxlvl', parseInt(e.target.value) || 1)}
+                                  min="1"
+                                  max="99"
+                                  disabled={isSaving}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                                <button 
+                                  onClick={() => updateEditingValue(skill.id, 'maxlvl', Math.min(99, isEditing.maxlvl + 1))}
+                                  onMouseDown={() => startIncrement(skill.id, 'maxlvl', 'up')}
+                                  onMouseUp={() => stopIncrement(skill.id, 'maxlvl', 'up')}
+                                  onMouseLeave={() => stopIncrement(skill.id, 'maxlvl', 'up')}
+                                  disabled={isSaving}
+                                  className="increment-button"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="skill-value">{skill.maxlvl}</span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="skill-actions">
+                          {isEditing ? (
+                            <>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  saveSkill(skill.id);
+                                }}
+                                disabled={isSaving}
+                                className="save-button"
+                              >
+                                {isSaving ? 'Guardando...' : 'Guardar'}
+                              </button>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  cancelEditing(skill.id);
+                                }}
+                                disabled={isSaving}
+                                className="cancel-button"
+                              >
+                                Cancelar
+                              </button>
+                            </>
+                          ) : (
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                startEditing(skill);
+                              }}
+                              className="edit-button"
+                            >
+                              Editar
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div className="skill-mod">
-                        <strong>Mod:</strong> {skill.modName || 'Desconocido'}
-                      </div>
-                    </div>
-                    
-                    <div className="skill-actions">
-                      {isEditing ? (
-                        <>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              saveSkill(skill.id);
-                            }}
-                            disabled={isSaving}
-                            className="save-button"
-                          >
-                            {isSaving ? 'Guardando...' : 'Guardar'}
-                          </button>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              cancelEditing(skill.id);
-                            }}
-                            disabled={isSaving}
-                            className="cancel-button"
-                          >
-                            Cancelar
-                          </button>
-                        </>
-                      ) : (
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            startEditing(skill);
-                          }}
-                          className="edit-button"
-                        >
-                          Editar
-                        </button>
+                      
+                      {isEditing && skill.skilldesc && (
+                        <div className="skill-description">
+                          {skill.skilldesc}
+                        </div>
                       )}
                     </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Paginación */}
+            {totalPages > 1 && (
+              <div className="pagination">
+                <button 
+                  onClick={goToFirstPage}
+                  disabled={currentPage === 1}
+                  className="pagination-btn"
+                >
+                  ⏮️
+                </button>
+                <button 
+                  onClick={goToPreviousPage}
+                  disabled={currentPage === 1}
+                  className="pagination-btn"
+                >
+                  ⏪
+                </button>
+                
+                {getPageNumbers().map((pageNum, index) => (
+                  pageNum === '...' ? (
+                    <span key={index} className="pagination-dots">...</span>
+                  ) : (
+                    <button
+                      key={index}
+                      onClick={() => goToPage(pageNum as number)}
+                      className={`pagination-btn ${currentPage === pageNum ? 'active' : ''}`}
+                    >
+                      {pageNum}
+                    </button>
+                  )
+                ))}
+                
+                <button 
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages}
+                  className="pagination-btn"
+                >
+                  ⏩
+                </button>
+                <button 
+                  onClick={goToLastPage}
+                  disabled={currentPage === totalPages}
+                  className="pagination-btn"
+                >
+                  ⏭️
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
