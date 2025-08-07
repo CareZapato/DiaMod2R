@@ -246,7 +246,6 @@ export class FileService {
         
         try {
           // Asignar el flag de expansion
-          skill.expansion = isExpansion;
           
           // Mapear todas las 290 columnas del skills.txt
           skill.skill = values[0] || '';
