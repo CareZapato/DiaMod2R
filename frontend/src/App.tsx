@@ -11,6 +11,7 @@ import { SkillsView } from './components/SkillsView';
 import SkillsGlobal from './components/SkillsGlobal';
 import SkillsChanges from './components/SkillsChanges';
 import GlobalChanges from './components/GlobalChanges';
+import FileComparison from './components/FileComparison';
 import { Mod } from './types';
 import { modService } from './services/modService';
 
@@ -63,6 +64,8 @@ function App() {
         return <Runas />;
       case 'global-changes':
         return <GlobalChanges />;
+      case 'file-comparison':
+        return <FileComparison />;
       case 'items':
         return (
           <div className="coming-soon">

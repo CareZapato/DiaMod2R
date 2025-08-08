@@ -78,7 +78,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => 
     {
       id: 'stats-heroes',
       label: 'Stats Personajes',
-      icon: '🏃‍♂️',
+      icon: '🏃',
       enabled: isModSelected && enabledSections.includes('stats-heroes'),
       description: 'Gestionar estadísticas de personajes',
       subItems: [
@@ -98,7 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => 
           id: 'stats-heroes-changes',
           label: 'Resumen de Cambios',
           description: 'Ver todos los cambios realizados vs valores base',
-          icon: '�'
+          icon: '📋'
         }
       ]
     },
@@ -167,6 +167,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => 
       icon: '💎',
       enabled: isModSelected && enabledSections.includes('treasures'),
       description: 'Configurar drops y tesoros',
+      subItems: []
+    },
+    {
+      id: 'file-comparison',
+      label: 'Comparar Archivos',
+      icon: '📊',
+      enabled: isModSelected,
+      description: 'Comparar archivos del mod con archivos base del juego',
       subItems: []
     },
     {

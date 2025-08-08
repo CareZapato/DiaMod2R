@@ -5,6 +5,7 @@ import { AppDataSource } from './data-source';
 import modRoutes from './routes/modRoutes';
 import systemRoutes from './routes/systemRoutes';
 import skillRoutes from './routes/skillRoutes';
+import fileRoutes from './routes/fileRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use('/api/mods', modRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/skills', skillRoutes);
+app.use('/api/files', fileRoutes);
 
 // Ruta de health check
 app.get('/health', (req, res) => {
