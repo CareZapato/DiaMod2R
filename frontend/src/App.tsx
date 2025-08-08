@@ -4,8 +4,13 @@ import { ModProvider } from './context/ModContext';
 import Sidebar from './components/Sidebar';
 import ModSelection from './components/ModSelection';
 import StatsHeroes from './components/StatsHeroes';
+import StatsBuffers from './components/StatsBuffers';
+import StatsChanges from './components/StatsChanges';
 import Runas from './components/Runas';
 import { SkillsView } from './components/SkillsView';
+import SkillsGlobal from './components/SkillsGlobal';
+import SkillsChanges from './components/SkillsChanges';
+import GlobalChanges from './components/GlobalChanges';
 import { Mod } from './types';
 import { modService } from './services/modService';
 
@@ -32,10 +37,32 @@ function App() {
     switch (activeSection) {
       case 'mod-selection':
         return <ModSelection />;
-      case 'stats-heroes':
+      
+      // Stats Personajes - Submenús
+      case 'stats-heroes-individual':
         return <StatsHeroes />;
+      case 'stats-heroes-buffers':
+        return <StatsBuffers />;
+      case 'stats-heroes-changes':
+        return <StatsChanges />;
+      case 'stats-heroes': // Fallback para compatibilidad
+        return <StatsHeroes />;
+      
+      // Skills - Submenús  
+      case 'skills-management':
+        return <SkillsView mods={mods} />;
+      case 'skills-global':
+        return <SkillsGlobal />;
+      case 'skills-changes':
+        return <SkillsChanges />;
+      case 'skills': // Fallback para compatibilidad
+        return <SkillsView mods={mods} />;
+      
+      // Otras secciones
       case 'runas':
         return <Runas />;
+      case 'global-changes':
+        return <GlobalChanges />;
       case 'items':
         return (
           <div className="coming-soon">
@@ -44,8 +71,6 @@ function App() {
             <p>La gestión de items estará disponible en una próxima versión.</p>
           </div>
         );
-      case 'skills':
-        return <SkillsView mods={mods} />;
       case 'monsters':
         return (
           <div className="coming-soon">
