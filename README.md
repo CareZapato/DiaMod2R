@@ -1,9 +1,9 @@
 # DiaMod2R - Diablo 2 Mod Character Stats & Skills Manager
 
-![Version](https://img.shields.io/badge/version-0.3.0-brightgreen.svg)
+![Version](https://img.shields.io/badge/version-0.3.1-brightgreen.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
-![TypeScript](https://img.shields.io/badge/typescript-5.9.2-blue.svg)
-![React](https://img.shields.io/badge/react-18.3.1-blue.svg)
+![TypeScript](https://img.shields.io/badge/typescript-4.9.5-blue.svg)
+![React](https://img.shields.io/badge/react-19.1.1-blue.svg)
 ![PostgreSQL](https://img.shields.io/badge/postgresql-12%2B-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 
@@ -39,7 +39,15 @@ DiaMod2R es una herramienta especializada que permite a los desarrolladores de m
   - Exportación a archivos skillsmod.txt
   - Restauración de valores originales
 
-#### ✨ **NUEVO v0.3.0 - Comparación de Archivos**
+#### ✨ **NUEVO v0.3.1 - Sistema de Buffers Inteligente**
+- **⚡ Buffers Globales Mejorados**: Sistema de mejoras automáticas para todos los personajes
+- **🧠 Detección Inteligente**: Detecta automáticamente qué buffers están aplicados analizando valores de la base de datos
+- **🤝 Compatibilidad entre Buffers**: Los buffers "Forest Runner" y "Bolt" ahora funcionan juntos perfectamente
+- **📁 Sobrescritura Directa**: Los cambios sobrescriben directamente los archivos originales con backup automático
+- **🔍 Indicadores Visuales**: Muestra qué buffers están activos con indicadores visuales claros
+- **📂 Categorización**: Buffers organizados por categorías (Estamina, Estadísticas, Vida-Mana, etc.)
+
+#### ✨ **v0.3.0 - Comparación de Archivos**
 - **📊 Sistema Completo de Comparación**: Comparación lado a lado de archivos mod vs base del juego
 - **🔄 Sincronización Avanzada**: 
   - Scrolling sincronizado entre tablas mod y base

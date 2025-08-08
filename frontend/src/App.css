@@ -182,11 +182,97 @@ body {
 
 .mod-name-container {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 8px;
 }
 
+.mod-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.action-button {
+  background: linear-gradient(135deg, 
+    rgba(102, 126, 234, 0.4) 0%, 
+    rgba(59, 130, 246, 0.3) 100%);
+  border: 1px solid rgba(102, 126, 234, 0.6);
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 8px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    0 2px 8px rgba(102, 126, 234, 0.2),
+    0 1px 3px rgba(0, 0, 0, 0.1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  position: relative;
+}
+
+.action-button:hover {
+  background: linear-gradient(135deg, 
+    rgba(102, 126, 234, 0.6) 0%, 
+    rgba(59, 130, 246, 0.5) 100%);
+  border-color: var(--primary-color);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 
+    0 6px 16px rgba(102, 126, 234, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Tooltips personalizados para los botones de acción */
+.action-button[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.action-button[title]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.9);
+  z-index: 1000;
+}
+
+.export-button {
+  background: linear-gradient(135deg, 
+    rgba(76, 175, 80, 0.4) 0%, 
+    rgba(56, 142, 60, 0.3) 100%);
+  border-color: rgba(76, 175, 80, 0.6);
+}
+
+.export-button:hover {
+  background: linear-gradient(135deg, 
+    rgba(76, 175, 80, 0.6) 0%, 
+    rgba(56, 142, 60, 0.5) 100%);
+  border-color: #4caf50;
+  box-shadow: 
+    0 6px 16px rgba(76, 175, 80, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Legacy support */
 .folder-button {
   background: linear-gradient(135deg, 
     rgba(102, 126, 234, 0.4) 0%, 

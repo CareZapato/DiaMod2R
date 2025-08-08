@@ -691,11 +691,16 @@ export class FileService {
   }
 
   /**
-   * Genera el archivo charstatsmod.txt con los cambios aplicados
+   * Genera el archivo charstats.txt modificado, creando una copia de seguridad del original
    */
   async generateModifiedCharStatsFile(charStats: CharStat[], originalFilePath: string): Promise<string> {
     try {
-      const modFilePath = path.join(path.dirname(originalFilePath), 'charstatsmod.txt');
+      // Crear copia de seguridad del archivo original
+      const backupFilePath = path.join(path.dirname(originalFilePath), 'charstats_backup.txt');
+      if (fs.existsSync(originalFilePath)) {
+        fs.copyFileSync(originalFilePath, backupFilePath);
+        console.log(`💾 Copia de seguridad creada: ${backupFilePath}`);
+      }
       
       // Definir las columnas en el orden correcto (sin incluir 'expansion')
       const columns = [
@@ -767,13 +772,13 @@ export class FileService {
         }
       }
       
-      // Escribir el archivo
-      fs.writeFileSync(modFilePath, content, 'utf-8');
+      // Escribir el archivo (sobrescribir el original)
+      fs.writeFileSync(originalFilePath, content, 'utf-8');
       
-      console.log(`✅ Archivo charstatsmod.txt generado exitosamente en: ${modFilePath}`);
+      console.log(`✅ Archivo charstats.txt modificado exitosamente en: ${originalFilePath}`);
       console.log(`📊 Estadísticas: ${classicHeroes.length} héroes clásicos, ${expansionHeroes.length} héroes de expansión`);
       
-      return modFilePath;
+      return originalFilePath;
     } catch (error) {
       console.error('❌ Error generando archivo charstatsmod.txt:', error);
       throw error;
@@ -781,11 +786,16 @@ export class FileService {
   }
 
   /**
-   * Genera el archivo skillsmod.txt con los cambios aplicados
+   * Genera el archivo skills.txt modificado, creando una copia de seguridad del original
    */
   async generateModifiedSkillsFile(skills: Skill[], originalFilePath: string): Promise<string> {
     try {
-      const modFilePath = path.join(path.dirname(originalFilePath), 'skillsmod.txt');
+      // Crear copia de seguridad del archivo original
+      const backupFilePath = path.join(path.dirname(originalFilePath), 'skills_backup.txt');
+      if (fs.existsSync(originalFilePath)) {
+        fs.copyFileSync(originalFilePath, backupFilePath);
+        console.log(`💾 Copia de seguridad creada: ${backupFilePath}`);
+      }
       
       // Definir todas las 293 columnas del archivo skills.txt en el orden correcto
       const columns = [
@@ -1156,16 +1166,46 @@ export class FileService {
         content += skillToLine(skill) + '\n';
       }
       
-      // Escribir el archivo
-      fs.writeFileSync(modFilePath, content, 'utf-8');
+      // Escribir el archivo (sobrescribir el original)
+      fs.writeFileSync(originalFilePath, content, 'utf-8');
       
-      console.log(`✅ Archivo skillsmod.txt generado exitosamente en: ${modFilePath}`);
+      console.log(`✅ Archivo skills.txt modificado exitosamente en: ${originalFilePath}`);
       console.log(`📊 Skills modificadas: ${sortedSkills.length} registros`);
       
-      return modFilePath;
+      return originalFilePath;
     } catch (error) {
-      console.error('❌ Error generando archivo skillsmod.txt:', error);
+      console.error('❌ Error generando archivo skills.txt:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Busca y retorna la ruta del archivo charstats.txt en la carpeta del mod
+   */
+  async findCharStatsFile(modFolderPath: string): Promise<string | null> {
+    try {
+      console.log(`🔍 Buscando archivo charstats.txt en: ${modFolderPath}`);
+      
+      const modFolderName = path.basename(modFolderPath);
+      const excelPath = path.join(modFolderPath, `${modFolderName}.mpq`, 'data', 'global', 'excel');
+      
+      if (!fs.existsSync(excelPath)) {
+        console.log(`❌ Ruta excel no existe: ${excelPath}`);
+        return null;
+      }
+      
+      const charStatsPath = path.join(excelPath, 'charstats.txt');
+      
+      if (fs.existsSync(charStatsPath)) {
+        console.log(`✅ Archivo charstats.txt encontrado: ${charStatsPath}`);
+        return charStatsPath;
+      } else {
+        console.log(`❌ Archivo charstats.txt no encontrado en: ${charStatsPath}`);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Error buscando archivo charstats.txt:', error);
+      return null;
     }
   }
 }

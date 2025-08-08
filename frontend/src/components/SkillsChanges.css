@@ -123,37 +123,40 @@
 }
 
 .summary-value.total {
-  color: #deb887;
-  background: rgba(139, 69, 19, 0.2);
+  color: #ffcc80;
+  background: rgba(255, 204, 128, 0.15);
+  border: 1px solid rgba(255, 204, 128, 0.3);
 }
 
 .summary-value.increase {
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.2);
+  color: #00e676;
+  background: rgba(0, 230, 118, 0.15);
+  border: 1px solid rgba(0, 230, 118, 0.3);
 }
 
 .summary-value.decrease {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.2);
+  color: #ff5252;
+  background: rgba(255, 82, 82, 0.15);
+  border: 1px solid rgba(255, 82, 82, 0.3);
 }
 
 .skills-groups {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 12px;
 }
 
 .skill-group {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
 }
 
 .skill-header {
-  background: rgba(139, 69, 19, 0.1);
+  background: rgba(255, 204, 128, 0.1);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 20px;
+  padding: 12px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -162,38 +165,38 @@
 .skill-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .skill-icon {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
 }
 
 .skill-details {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .skill-name {
   color: var(--text-white);
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 600;
   margin: 0;
 }
 
 .skill-class {
-  color: #deb887;
-  font-size: 0.9rem;
+  color: #ffcc80;
+  font-size: 0.8rem;
   font-weight: 500;
 }
 
 .changes-count {
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   background: rgba(255, 255, 255, 0.1);
-  padding: 4px 12px;
-  border-radius: 12px;
+  padding: 2px 8px;
+  border-radius: 8px;
 }
 
 .changes-list {
@@ -287,39 +290,42 @@
 }
 
 .change-item.increase .current-value {
-  background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
+  background: rgba(0, 230, 118, 0.15);
+  color: #00e676;
+  border: 1px solid rgba(0, 230, 118, 0.3);
 }
 
 .change-item.decrease .current-value {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  background: rgba(255, 82, 82, 0.15);
+  color: #ff5252;
+  border: 1px solid rgba(255, 82, 82, 0.3);
 }
 
 .change-item.change .current-value {
-  background: rgba(245, 158, 11, 0.2);
-  color: #f59e0b;
+  background: rgba(255, 183, 77, 0.15);
+  color: #ffb74d;
+  border: 1px solid rgba(255, 183, 77, 0.3);
 }
 
 .change-meta {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   align-items: flex-end;
 }
 
 .change-magnitude {
   color: var(--text-secondary);
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 500;
 }
 
 .change-item.increase .change-magnitude {
-  color: #10b981;
+  color: #00e676;
 }
 
 .change-item.decrease .change-magnitude {
-  color: #ef4444;
+  color: #ff5252;
 }
 
 .change-date {

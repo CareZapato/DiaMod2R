@@ -35,7 +35,6 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
   const [editingSkills, setEditingSkills] = useState<{ [skillId: number]: SkillEdit }>({});
   const [originalSkillValues, setOriginalSkillValues] = useState<OriginalSkillValues>({});
   const [savingSkills, setSavingSkills] = useState<Set<number>>(new Set());
-  const [generatingFile, setGeneratingFile] = useState(false);
   const [skillChanges, setSkillChanges] = useState<SkillChange[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
@@ -323,61 +322,6 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
     }
   };
 
-  const generateFile = async () => {
-    if (skillChanges.length === 0) return;
-
-    // Determinar el mod para exportar
-    let modToExport: number | null = null;
-    
-    // Si hay un mod seleccionado y es un número válido, usarlo
-    if (typeof selectedMod === 'number') {
-      modToExport = selectedMod;
-    }
-    
-    // Si no hay mod seleccionado, usar el mod de los cambios
-    if (!modToExport) {
-      const changedSkillIds = skillChanges.map(change => change.id);
-      const changedSkills = skills.filter(skill => changedSkillIds.includes(skill.id));
-      
-      if (changedSkills.length === 0) return;
-      
-      // Verificar que todos los cambios son del mismo mod
-      const modIds = changedSkills.map(skill => skill.modId);
-      const uniqueModIds = Array.from(new Set(modIds));
-      
-      if (uniqueModIds.length > 1) {
-        alert('Los cambios pertenecen a múltiples mods. Por favor, selecciona un mod específico para exportar.');
-        return;
-      }
-      
-      modToExport = uniqueModIds[0];
-    }
-
-    if (!modToExport) return;
-
-    try {
-      setGeneratingFile(true);
-      const response = await skillService.generateModifiedSkillsFile(modToExport);
-      
-      if (response.success && response.data) {
-        alert(`Archivo skillsmod.txt generado exitosamente en: ${response.data.filePath}`);
-        setHasUnsavedChanges(false);
-        // Limpiar cambios relacionados con este mod
-        setSkillChanges(prev => {
-          const modSkills = skills.filter(skill => skill.modId === modToExport).map(skill => skill.id);
-          return prev.filter(change => !modSkills.includes(change.id));
-        });
-      } else {
-        alert('Error generando archivo: ' + response.error);
-      }
-    } catch (error) {
-      console.error('Error generating file:', error);
-      alert('Error al generar el archivo. Por favor, intenta de nuevo.');
-    } finally {
-      setGeneratingFile(false);
-    }
-  };
-
   const clearChanges = async () => {
     try {
       // Restaurar valores originales de las skills que han cambiado
@@ -499,7 +443,7 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
           </p>
           {skillChanges.length > 0 && (
             <p className="changes-info">
-              ✏️ {skillChanges.length} cambio{skillChanges.length !== 1 ? 's' : ''} sin exportar
+              ✏️ {skillChanges.length} cambio{skillChanges.length !== 1 ? 's' : ''} pendiente{skillChanges.length !== 1 ? 's' : ''}
             </p>
           )}
         </div>
@@ -537,13 +481,6 @@ export const SkillsView: React.FC<SkillsViewProps> = ({ mods }) => {
               </select>
             </div>
           </div>
-          <button 
-            onClick={generateFile}
-            disabled={generatingFile || skillChanges.length === 0}
-            className="generate-file-button"
-          >
-            {generatingFile ? 'Generando...' : '📄 Exportar Cambios'}
-          </button>
         </div>
       </div>
 

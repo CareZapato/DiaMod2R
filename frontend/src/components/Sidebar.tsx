@@ -66,6 +66,57 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => 
     }
   };
 
+  const exportModFiles = async (modId: number) => {
+    try {
+      const exportPromises = [];
+      
+      // Exportar charstats modificados
+      exportPromises.push(
+        fetch(`http://localhost:3001/api/mods/${modId}/generate-modified-charstats-file`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+      );
+      
+      // Exportar skills modificados
+      exportPromises.push(
+        fetch(`http://localhost:3001/api/mods/${modId}/generate-modified-skills-file`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+      );
+
+      const results = await Promise.allSettled(exportPromises);
+      
+      let successCount = 0;
+      let errors = [];
+      
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value.ok) {
+          successCount++;
+        } else {
+          errors.push(result.status === 'fulfilled' ? 'Error en respuesta' : result.reason);
+        }
+      }
+
+      if (successCount > 0) {
+        alert(`✅ Exportación completada!\n\n` +
+              `📄 Archivos exportados: ${successCount}\n` +
+              `❌ Errores: ${errors.length}\n\n` +
+              `Los archivos modificados se generaron con los últimos cambios de la base de datos.`);
+      } else {
+        alert('❌ Error en la exportación: ' + errors.join(', '));
+      }
+    } catch (error) {
+      console.error('Error exportando archivos:', error);
+      alert('Error al exportar los archivos del mod');
+    }
+  };
+
   const menuItems = [
     {
       id: 'mod-selection',
@@ -208,13 +259,22 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => 
             <span className="mod-label">Mod Actual:</span>
             <div className="mod-name-container">
               <span className="mod-name">{selectedMod.name}</span>
-              <button
-                className="folder-button"
-                onClick={() => openModFolder(selectedMod.folderPath)}
-                title="Abrir carpeta del mod en el explorador"
-              >
-                📁
-              </button>
+              <div className="mod-actions">
+                <button
+                  className="action-button folder-button"
+                  onClick={() => openModFolder(selectedMod.folderPath)}
+                  title="Abrir carpeta del mod en el explorador"
+                >
+                  📁
+                </button>
+                <button
+                  className="action-button export-button"
+                  onClick={() => exportModFiles(selectedMod.id)}
+                  title="Exportar archivos modificados del mod"
+                >
+                  📤
+                </button>
+              </div>
             </div>
           </div>
         </div>

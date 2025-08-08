@@ -178,6 +178,18 @@
   box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
 }
 
+.buffer-card.applied {
+  background: rgba(46, 160, 67, 0.15);
+  border-color: var(--success-color);
+  box-shadow: 0 0 15px rgba(46, 160, 67, 0.25);
+}
+
+.buffer-card.applied.selected {
+  background: rgba(46, 160, 67, 0.25);
+  border-color: var(--success-color);
+  box-shadow: 0 0 20px rgba(46, 160, 67, 0.4);
+}
+
 .buffer-icon {
   font-size: 2rem;
   display: flex;
@@ -187,6 +199,30 @@
   height: 50px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 12px;
+  position: relative;
+}
+
+.applied-indicator {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--success-color);
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.applied-text {
+  color: var(--success-color);
+  font-weight: 500;
+  font-size: 0.9em;
 }
 
 .buffer-content {

@@ -4,7 +4,7 @@ import { ModProvider } from './context/ModContext';
 import Sidebar from './components/Sidebar';
 import ModSelection from './components/ModSelection';
 import StatsHeroes from './components/StatsHeroes';
-import StatsBuffers from './components/StatsBuffers';
+import StatsBuffers from './components/BuffersComponent';
 import StatsChanges from './components/StatsChanges';
 import Runas from './components/Runas';
 import { SkillsView } from './components/SkillsView';

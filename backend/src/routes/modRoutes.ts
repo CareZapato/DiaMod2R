@@ -218,6 +218,65 @@ router.post('/:id/generate-modified-file', async (req: Request, res: Response) =
   }
 });
 
+// POST /api/mods/:id/apply-buffers - Aplicar buffers globales a todos los CharStats
+router.post('/:id/apply-buffers', async (req: Request, res: Response) => {
+  try {
+    const modId = parseInt(req.params.id);
+    if (isNaN(modId)) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
+
+    const { buffers } = req.body;
+    if (!buffers || !Array.isArray(buffers)) {
+      return res.status(400).json({ error: 'Se requiere un array de buffers' });
+    }
+
+    const result = await modService.applyBuffersToAllCharStats(modId, buffers);
+    
+    res.json({
+      success: true,
+      message: `Buffers aplicados exitosamente a ${result.affectedRows} personajes`,
+      data: {
+        affectedRows: result.affectedRows,
+        appliedBuffers: buffers.length,
+        modFileGenerated: result.modFileGenerated
+      }
+    });
+  } catch (error) {
+    console.error('Error en /api/mods/:id/apply-buffers:', error);
+    res.status(500).json({ 
+      error: 'Error aplicando buffers',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+// POST /api/mods/:id/generate-modified-charstats-file - Generar archivo charstatsmod.txt
+router.post('/:id/generate-modified-charstats-file', async (req: Request, res: Response) => {
+  try {
+    const modId = parseInt(req.params.id);
+    if (isNaN(modId)) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
+
+    const filePath = await modService.generateModifiedCharStatsFile(modId);
+    
+    res.json({
+      success: true,
+      message: 'Archivo charstatsmod.txt generado exitosamente',
+      data: {
+        filePath
+      }
+    });
+  } catch (error) {
+    console.error('Error en /api/mods/:id/generate-modified-charstats-file:', error);
+    res.status(500).json({ 
+      error: 'Error generando archivo charstats modificado',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
 // POST /api/mods/:id/generate-modified-skills-file - Generar archivo skillsmod.txt
 router.post('/:id/generate-modified-skills-file', async (req: Request, res: Response) => {
   try {
@@ -239,6 +298,56 @@ router.post('/:id/generate-modified-skills-file', async (req: Request, res: Resp
     console.error('Error en /api/mods/:id/generate-modified-skills-file:', error);
     res.status(500).json({ 
       error: 'Error generando archivo skills modificado',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+// Endpoint para obtener buffers aplicados
+router.get('/:modId/applied-buffers', async (req, res) => {
+  try {
+    const modId = parseInt(req.params.modId);
+    
+    if (isNaN(modId)) {
+      return res.status(400).json({ error: 'ID de mod inválido' });
+    }
+
+    const appliedBuffers = await modService.getAppliedBuffers(modId);
+    
+    res.json({
+      success: true,
+      modId,
+      appliedBuffers
+    });
+  } catch (error) {
+    console.error('Error obteniendo buffers aplicados:', error);
+    res.status(500).json({
+      error: 'Error obteniendo buffers aplicados',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+// Endpoint para obtener resumen de cambios de CharStats
+router.get('/:modId/charstats-changes-summary', async (req, res) => {
+  try {
+    const modId = parseInt(req.params.modId);
+    
+    if (isNaN(modId)) {
+      return res.status(400).json({ error: 'ID de mod inválido' });
+    }
+
+    const summary = await modService.getCharStatsChangeSummary(modId);
+    
+    res.json({
+      success: true,
+      modId,
+      data: summary
+    });
+  } catch (error) {
+    console.error('Error obteniendo resumen de cambios:', error);
+    res.status(500).json({
+      error: 'Error obteniendo resumen de cambios',
       details: error instanceof Error ? error.message : 'Error desconocido'
     });
   }

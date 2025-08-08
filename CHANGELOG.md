@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2025-08-08
+
+### Fixed - Critical Build and Buffer System Improvements
+- 🔧 **Critical Build Fix**: Resolved TypeScript compilation issues that prevented frontend deployment
+  - Fixed "File is not a module" errors causing build failures
+  - Removed conflicting backup files that interfered with TypeScript compiler
+  - Renamed StatsBuffers component to BuffersComponent to resolve filename conflicts
+  - Restored full compilation compatibility with React 19 and TypeScript 4.9
+- ⚡ **Enhanced Buffer System**:
+  - **Intelligent Buffer Detection**: Automatic detection of applied buffers based on database values
+  - **Buffer Compatibility**: Forest Runner and Bolt buffers now work together seamlessly
+  - **Direct File Overwriting**: Mod changes now directly overwrite original charstats.txt/skills.txt files with automatic backup creation
+  - **Applied Buffer Indicators**: Visual feedback showing which buffers are currently active
+  - **Categorized Buffer Interface**: Organized buffers by type (Stamina, Stats, Health-Mana, etc.)
+- 🗃️ **Backend Buffer Detection**:
+  - New `detectAppliedBuffers()` method that analyzes database values vs expected buffer patterns
+  - Automatic buffer state detection based on actual field values
+  - Real-time synchronization between applied changes and buffer status
+- 📁 **File Management Improvements**:
+  - Automatic backup creation before overwriting original files
+  - Direct file modification strategy instead of separate mod file generation
+  - Enhanced file error handling and validation
+
+### Enhanced Backend API
+- 🔄 **New Buffer Detection Endpoint**: `/api/mods/:id/applied-buffers` for real-time buffer status
+- 🎯 **Improved Buffer Application**: Enhanced `/api/mods/:id/apply-buffers` with better error handling
+- 📊 **Automatic File Regeneration**: Files are automatically updated after each buffer application
+- 🗂️ **Enhanced ModService**: Improved buffer detection logic with pattern matching algorithms
+
+### Developer Experience
+- 🔨 **Build System Stability**: Resolved critical compilation issues blocking development
+- 📦 **Component Architecture**: Improved component naming and organization
+- 🧹 **Code Cleanup**: Removed problematic backup files and resolved module conflicts
+- 🛠️ **Error Handling**: Enhanced error reporting and debugging capabilities
+
 ## [0.3.0] - 2025-08-08
 
 ### Added - File Comparison System & Advanced Navigation

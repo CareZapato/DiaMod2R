@@ -246,7 +246,25 @@ export class ModService {
     // Actualizar solo los campos proporcionados
     Object.assign(existingCharStat, updateData);
     
-    return await this.charStatRepository.save(existingCharStat);
+    const updatedCharStat = await this.charStatRepository.save(existingCharStat);
+    
+    // Regenerar automáticamente el archivo charstats.txt
+    try {
+      await this.generateModifiedCharStatsFile(existingCharStat.modId);
+      console.log(`📄 Archivo charstats.txt actualizado automáticamente tras cambio en CharStat ID: ${id}`);
+    } catch (error) {
+      console.error('⚠️ Error actualizando archivo charstats.txt:', error);
+    }
+    
+    // Detectar automáticamente buffers aplicados después del cambio
+    try {
+      await this.detectAppliedBuffers(existingCharStat.modId);
+      console.log(`🔍 Buffers detectados automáticamente tras cambio en CharStat ID: ${id}`);
+    } catch (error) {
+      console.error('⚠️ Error detectando buffers aplicados:', error);
+    }
+    
+    return updatedCharStat;
   }
 
   /**
@@ -267,6 +285,14 @@ export class ModService {
     const skillWithMod = await this.skillRepository.findById(updatedSkill.id);
     if (!skillWithMod) {
       throw new Error(`No se pudo cargar la skill actualizada con información del mod`);
+    }
+    
+    // Regenerar automáticamente el archivo skills.txt
+    try {
+      await this.generateModifiedSkillsFile(skillWithMod.modId);
+      console.log(`📄 Archivo skills.txt actualizado automáticamente tras cambio en Skill ID: ${id}`);
+    } catch (error) {
+      console.error('⚠️ Error actualizando archivo skills.txt:', error);
     }
     
     return skillWithMod;
@@ -349,4 +375,214 @@ export class ModService {
       throw error;
     }
   }
+
+  /**
+   * Aplica buffers globales a todos los CharStats de un mod
+   */
+  async applyBuffersToAllCharStats(modId: number, buffers: any[]): Promise<{ affectedRows: number; modFileGenerated: string }> {
+    try {
+      console.log(`🚀 Aplicando ${buffers.length} buffers al mod ID: ${modId}`);
+      
+      // 1. Verificar que el mod existe
+      const mod = await this.modRepository.findById(modId);
+      if (!mod) {
+        throw new Error(`Mod con ID ${modId} no encontrado`);
+      }
+
+      // 2. Obtener todos los CharStats del mod
+      const charStats = await this.charStatRepository.findByModId(modId);
+      if (charStats.length === 0) {
+        throw new Error(`No se encontraron CharStats para el mod ID ${modId}`);
+      }
+
+      console.log(`📊 Aplicando buffers a ${charStats.length} personajes`);
+
+      // 3. Aplicar cada buffer a todos los CharStats
+      let totalUpdates = 0;
+      for (const charStat of charStats) {
+        for (const buffer of buffers) {
+          // Aplicar cada cambio del buffer
+          for (const [fieldName, value] of Object.entries(buffer.changes)) {
+            if (charStat.hasOwnProperty(fieldName)) {
+              (charStat as any)[fieldName] = value;
+              totalUpdates++;
+            }
+          }
+        }
+        
+        // Guardar el CharStat actualizado
+        await this.charStatRepository.save(charStat);
+      }
+
+      console.log(`✅ Se aplicaron ${totalUpdates} cambios en total`);
+
+      // 4. Detectar automáticamente buffers aplicados basándose en valores reales
+      const detectedBuffers = await this.detectAppliedBuffers(modId);
+      console.log(`📝 Buffers detectados automáticamente: ${detectedBuffers.join(', ')}`);
+
+      // 5. Generar automáticamente el archivo charstats.txt modificado
+      const modFilePath = await this.generateModifiedCharStatsFile(modId);
+      console.log(`📄 Archivo charstats.txt actualizado automáticamente`);
+
+      return {
+        affectedRows: charStats.length,
+        modFileGenerated: modFilePath
+      };
+    } catch (error) {
+      console.error('❌ Error en applyBuffersToAllCharStats:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Detecta automáticamente qué buffers están aplicados basándose en los valores en la BD
+   */
+  async detectAppliedBuffers(modId: number): Promise<string[]> {
+    try {
+      // Definir buffers conocidos con sus cambios esperados
+      const knownBuffers = [
+        {
+          name: 'Bolt',
+          changes: { RunVelocity: 15 }
+        },
+        {
+          name: 'Forest Runner', 
+          changes: { RunDrain: 0 }
+        },
+        {
+          name: 'God Mode',
+          changes: { str: 999, dex: 999, int: 999, vit: 999 }
+        },
+        {
+          name: 'Mega Health',
+          changes: { LifePerLevel: 20, LifePerVitality: 4 }
+        },
+        {
+          name: 'Mega Mana',
+          changes: { ManaPerLevel: 15, ManaPerMagic: 3 }
+        },
+        {
+          name: 'Fast Cast',
+          changes: { MinimumCastingDelay: 0 }
+        },
+        {
+          name: 'Super Bright',
+          changes: { LightRadius: 15 }
+        },
+        {
+          name: 'No Level Requirements',
+          changes: { StatPerLevel: 1, SkillsPerLevel: 1 }
+        }
+      ];
+
+      const charStats = await this.charStatRepository.findByModId(modId);
+      if (charStats.length === 0) return [];
+
+      const appliedBuffers: string[] = [];
+
+      // Para cada buffer conocido, verificar si está aplicado
+      for (const buffer of knownBuffers) {
+        let bufferApplied = true;
+
+        // Verificar si TODOS los CharStats tienen los valores esperados del buffer
+        for (const charStat of charStats) {
+          for (const [field, expectedValue] of Object.entries(buffer.changes)) {
+            if ((charStat as any)[field] !== expectedValue) {
+              bufferApplied = false;
+              break;
+            }
+          }
+          if (!bufferApplied) break;
+        }
+
+        if (bufferApplied) {
+          appliedBuffers.push(buffer.name);
+        }
+      }
+
+      // Actualizar el tracking interno
+      this.appliedBuffers[modId] = appliedBuffers;
+      
+      return appliedBuffers;
+    } catch (error) {
+      console.error('❌ Error detectando buffers aplicados:', error);
+      return [];
+    }
+  }
+
+  // Buffer tracking automático - se actualiza basándose en valores reales de BD
+  private appliedBuffers: { [modId: number]: string[] } = {};
+
+  /**
+   * Obtiene los buffers aplicados para un mod (detectados automáticamente)
+   */
+  async getAppliedBuffers(modId: number): Promise<string[]> {
+    return await this.detectAppliedBuffers(modId);
+  }
+
+  /**
+   * Verifica si un buffer específico está aplicado
+   */
+  async isBufferApplied(modId: number, bufferName: string): Promise<boolean> {
+    const applied = await this.detectAppliedBuffers(modId);
+    return applied.includes(bufferName);
+  }
+
+  /**
+   * Obtiene un resumen de diferencias entre valores actuales y valores base del juego
+   */
+  async getCharStatsChangeSummary(modId: number): Promise<any> {
+    try {
+      const charStats = await this.charStatRepository.findByModId(modId);
+      if (charStats.length === 0) return { changes: [], totalChanges: 0 };
+
+      // Valores base típicos del Diablo 2 (estos serían los valores originales)
+      const baseValues = {
+        str: 10, dex: 10, int: 10, vit: 10,
+        RunVelocity: 6, RunDrain: 20,
+        LifePerLevel: 2, StaminaPerLevel: 1, ManaPerLevel: 1.5,
+        LifePerVitality: 2, StaminaPerVitality: 1, ManaPerMagic: 1.5,
+        StatPerLevel: 5, SkillsPerLevel: 1,
+        LightRadius: 13, MinimumCastingDelay: 4,
+        HealthPotionPercent: 50, ManaPotionPercent: 50
+      };
+
+      const changes: any[] = [];
+      
+      for (const charStat of charStats) {
+        const classChanges: any = {
+          className: charStat.class,
+          modifications: []
+        };
+
+        // Comparar cada campo con los valores base
+        for (const [field, baseValue] of Object.entries(baseValues)) {
+          const currentValue = (charStat as any)[field];
+          if (currentValue !== undefined && currentValue !== baseValue) {
+            classChanges.modifications.push({
+              field,
+              baseValue,
+              currentValue,
+              difference: currentValue - baseValue,
+              isIncrease: currentValue > baseValue
+            });
+          }
+        }
+
+        if (classChanges.modifications.length > 0) {
+          changes.push(classChanges);
+        }
+      }
+
+      return {
+        changes,
+        totalChanges: changes.reduce((sum, c) => sum + c.modifications.length, 0),
+        appliedBuffers: await this.detectAppliedBuffers(modId)
+      };
+    } catch (error) {
+      console.error('❌ Error obteniendo resumen de cambios:', error);
+      return { changes: [], totalChanges: 0, appliedBuffers: [] };
+    }
+  }
+
 }
