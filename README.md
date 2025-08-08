@@ -1,10 +1,11 @@
 # DiaMod2R - Diablo 2 Mod Character Stats & Skills Manager
 
-![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.3.0-brightgreen.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
 ![TypeScript](https://img.shields.io/badge/typescript-5.9.2-blue.svg)
 ![React](https://img.shields.io/badge/react-18.3.1-blue.svg)
 ![PostgreSQL](https://img.shields.io/badge/postgresql-12%2B-blue.svg)
+![License](https://img.shields.io/badge/license-ISC-green.svg)
 
 Aplicación web para gestionar y editar estadísticas de personajes y habilidades en mods de Diablo 2, construida con Node.js/TypeScript backend y React/TypeScript frontend.
 
