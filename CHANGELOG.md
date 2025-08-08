@@ -5,6 +5,76 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-08-08
+
+### Added - File Comparison System & Advanced Navigation
+- 📊 **Complete File Comparison System**: Side-by-side comparison of mod vs base game files
+- 🔄 **Advanced Data Synchronization**:
+  - Synchronized scrolling between mod and base tables
+  - Precise row alignment using primary keys ('class' for charstats, 'skill' for skills)
+  - Column header consistency with reference-based synchronization
+- 🎨 **Visual Difference Indicators**:
+  - Green highlighting for higher values in mod
+  - Red highlighting for lower values in mod
+  - Blue highlighting for different text/other value types
+- 📈 **Detailed Loading Progress System**:
+  - 5-stage loading process with real-time progress bars
+  - Step-by-step feedback: File selection → Base data loading → Mod data loading → Synchronization → Rendering
+  - Animated progress indicators with shimmer effects
+- 🗂️ **Enhanced Menu with Subcategories**:
+  - Hierarchical navigation structure
+  - Organized menu sections with proper categorization
+  - Improved user experience with logical grouping
+- ⚡ **Global Change Templates Foundation**:
+  - Infrastructure for mass modification applications
+  - Preparatory system for automated bulk changes
+- 📝 **Comprehensive Changelog System**:
+  - Version history tracking with detailed descriptions
+  - Future roadmap with planned features and ETAs
+  - Integrated versioning documentation
+
+### Enhanced Backend Architecture
+- 🔄 **Specialized File Parsers**:
+  - Dedicated charstats.txt and skills.txt parsers
+  - Automatic data type detection and conversion
+  - Robust error handling for malformed files
+- 🗂️ **Row Synchronization Algorithm**:
+  - Map-based primary key indexing for accurate row alignment
+  - Intelligent field matching between mod and base data
+  - Preserves data integrity during comparison operations
+- 📊 **Optimized Comparison Endpoints**:
+  - `/api/files/compare` endpoint with full synchronization support
+  - Enhanced file processing with progress tracking
+  - Memory-efficient handling of large datasets
+
+### Improved User Experience
+- 🖥️ **Excel-like Table Styling**:
+  - Professional spreadsheet appearance
+  - Sticky headers for better navigation
+  - Hover effects and clear cell boundaries
+- 📱 **Enhanced Responsive Design**:
+  - Improved mobile and tablet compatibility
+  - Adaptive layouts for different screen sizes
+  - Touch-friendly interface elements
+- ⚡ **Performance Optimizations**:
+  - Faster data loading and processing
+  - Optimized React rendering with proper state management
+  - Reduced memory footprint for large datasets
+
+### Technical Improvements
+- 🔧 **Enhanced State Management**:
+  - Improved loading state handling with immediate cleanup
+  - Better error state management and user feedback
+  - Consistent state synchronization across components
+- 🛠️ **Code Architecture Enhancements**:
+  - Modular component structure for better maintainability
+  - Type-safe interfaces for all data operations
+  - Comprehensive error handling and logging
+- 📦 **Version Management System**:
+  - Centralized version tracking across all packages
+  - Consistent version numbering (0.3.0) throughout the application
+  - Automated version display in sidebar
+
 ## [0.2.0] - 2025-08-07
 
 ### Added - Skills Management System

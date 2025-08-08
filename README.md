@@ -1,31 +1,14 @@
 # DiaMod2R - Diablo 2 Mod Character Stats & Skills Manager
 
-![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
-![T## 🗺️ Roadmap Futuro
-
-### v0.3.0 - Próximamente
-- 🔄 Gestión de items y equipamiento (armor.txt, weapons.txt)
-- 🔄 Editor de runas y gemas
-- 🔄 Validación avanzada de dependencias entre archivos
-
-### v0.4.0 - Planeado
-- 🔄 Import/Export de configuraciones completas
-- 🔄 Historial de cambios y versionado
-- 🔄 Backup automático de archivos originales
-- 🔄 Comparador de mods side-by-side
-
-### v1.0.0 - Futuro
-- 🗺️ Soporte para múltiples idiomas
-- 🗺️ Plugin system para extensiones
-- 🗺️ Interfaz de scripting avanzada
-- 🗺️ Colaboración multi-usuario](https://img.shields.io/badge/typescript-5.9.2-blue.svg)
+![TypeScript](https://img.shields.io/badge/typescript-5.9.2-blue.svg)
 ![React](https://img.shields.io/badge/react-18.3.1-blue.svg)
 ![PostgreSQL](https://img.shields.io/badge/postgresql-12%2B-blue.svg)
 
 Aplicación web para gestionar y editar estadísticas de personajes y habilidades en mods de Diablo 2, construida con Node.js/TypeScript backend y React/TypeScript frontend.
 
-## � Descripción
+## 📋 Descripción
 
 DiaMod2R es una herramienta especializada que permite a los desarrolladores de mods de Diablo 2 gestionar y editar tanto las estadísticas de personajes como las habilidades de manera intuitiva y eficiente. La aplicación lee archivos `charstats.txt` y `skills.txt` de mods, los almacena en una base de datos PostgreSQL, y proporciona una interfaz web moderna para editarlos.
 
@@ -39,7 +22,7 @@ DiaMod2R es una herramienta especializada que permite a los desarrolladores de m
 - **💾 Guardado Individual**: Guarda cambios por héroe de forma independiente
 - **🔄 Detección de Expansión**: Reconoce automáticamente personajes clásicos vs expansión
 
-#### Gestión de Habilidades ✨ **NUEVO**
+#### Gestión de Habilidades
 - **🎯 Sistema Completo de Skills**: Procesamiento y gestión de archivos skills.txt
 - **📋 Vistas Duales**: 
   - Vista de tarjetas: Cards compactas y visuales para edición detallada
@@ -54,6 +37,20 @@ DiaMod2R es una herramienta especializada que permite a los desarrolladores de m
   - Tracking de cambios con valores antes/después
   - Exportación a archivos skillsmod.txt
   - Restauración de valores originales
+
+#### ✨ **NUEVO v0.3.0 - Comparación de Archivos**
+- **📊 Sistema Completo de Comparación**: Comparación lado a lado de archivos mod vs base del juego
+- **🔄 Sincronización Avanzada**: 
+  - Scrolling sincronizado entre tablas mod y base
+  - Alineación precisa de filas usando claves primarias
+  - Consistencia de columnas y headers
+- **🎨 Indicadores Visuales de Diferencias**: 
+  - Verde: Valores superiores en el mod
+  - Rojo: Valores inferiores en el mod  
+  - Azul: Valores diferentes (texto/otros tipos)
+- **📈 Carga con Progreso**: Sistema de 5 etapas con barras de progreso detalladas
+- **🗂️ Menú con Subcategorías**: Navegación organizada y jerárquica mejorada
+- **⚡ Plantillas Globales**: Fundación para cambios masivos automatizados
 
 #### Interfaz y Experiencia
 - **🖥️ Interfaz Backoffice**: Diseño profesional con sidebar de navegación
@@ -208,7 +205,19 @@ MiMod/
 
 ## 🔧 Funcionalidades Implementadas
 
-### v0.2.0 - Sistema de Skills ✨ **ACTUAL**
+### v0.3.0 - Menús Avanzados y Comparación de Archivos ✨ **ACTUAL**
+- ✅ **Sistema de Comparación Completo** - Comparación lado a lado mod vs base del juego
+- ✅ **Menú con Subcategorías** - Navegación jerárquica y organizada mejorada
+- ✅ **Sincronización de Datos** - Alineación precisa de filas y columnas
+- ✅ **Indicadores Visuales** - Resaltado de diferencias con código de colores
+- ✅ **Barras de Progreso** - Sistema de carga en 5 etapas con feedback detallado
+- ✅ **Scrolling Sincronizado** - Navegación paralela entre tablas comparativas
+- ✅ **Plantillas Globales** - Base para aplicación masiva de modificaciones
+- ✅ **Mejoras UX** - Experiencia de usuario refinada y responsiva
+- ✅ **Parsers Especializados** - Manejo optimizado de archivos de configuración
+- ✅ **Sistema de Changelog** - Historial completo de versiones y cambios
+
+### v0.2.0 - Sistema de Skills
 - ✅ **Procesamiento completo de skills.txt** - Lectura de 293 columnas de datos
 - ✅ **Vistas duales (tarjetas/lista)** - Diseño compacto y eficiente
 - ✅ **Paginación avanzada** - Navegación optimizada para grandes datasets  
@@ -220,7 +229,7 @@ MiMod/
 - ✅ **Preservación de relaciones** - Mantenimiento de vínculos mod-skill
 - ✅ **Validación en tiempo real** - Límites min/max y validación de datos
 
-### v0.0.1 - Base de Character Stats
+### v0.1.0 - Base de Character Stats
 - ✅ Lectura y parseo de archivos charstats.txt
 - ✅ Detección automática de estructura de mod
 - ✅ Distinción entre personajes clásicos y de expansión
@@ -232,15 +241,29 @@ MiMod/
 - ✅ Interfaz backoffice profesional
 - ✅ Navegador de carpetas integrado
 
-## � Roadmap Futuro
+## 🗺️ Roadmap Futuro
 
-- 🔄 Editor de skills y habilidades
-- 🔄 Gestión de items y equipamiento
-- 🔄 Import/Export de configuraciones
-- 🔄 Validación avanzada de datos
-- 🔄 Historial de cambios
-- 🔄 Backup automático
-- � Soporte para múltiples idiomas
+### v0.4.0 - Edición y Testing Avanzado (Q4 2025)
+- 🔄 Edición de archivos en el apartado comparativo
+- 🔄 Testing de propuestas en mejoras globales
+- 🔄 Funcionalidad para reemplazar archivos mod por originales
+- 🔄 Sección completa de runas y runewords
+- 🔄 Sistema de backup automático
+- 🔄 Validación avanzada de cambios
+
+### v0.5.0 - Gestión Completa de Contenido (Q1 2026)
+- 🔄 Gestión de items y equipamiento (armor.txt, weapons.txt)
+- 🔄 Editor de monstruos y niveles
+- 🔄 Sistema de tesoros y drops
+- 🔄 Import/Export de configuraciones completas
+- 🔄 Historial de cambios y versionado
+
+### v1.0.0 - Plataforma Completa (Q2 2026)
+- 🗺️ Soporte para múltiples idiomas
+- �️ Sistema de plugins para extensiones
+- �️ Interfaz de scripting avanzada
+- 🗺️ Colaboración multi-usuario
+- 🗺️ Comparador de mods side-by-side completo
 
 ## 🤝 Contribuir
 

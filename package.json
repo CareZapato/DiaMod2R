@@ -1,6 +1,6 @@
 {
   "name": "diamod2r",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "description": "Aplicación web para gestionar y editar estadísticas de personajes en mods de Diablo 2",
   "main": "index.js",
   "scripts": {

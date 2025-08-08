@@ -12,6 +12,7 @@ import SkillsGlobal from './components/SkillsGlobal';
 import SkillsChanges from './components/SkillsChanges';
 import GlobalChanges from './components/GlobalChanges';
 import FileComparison from './components/FileComparison';
+import Changelog from './components/Changelog';
 import { Mod } from './types';
 import { modService } from './services/modService';
 
@@ -98,6 +99,10 @@ function App() {
             <p>La gestión de tesoros estará disponible en una próxima versión.</p>
           </div>
         );
+      
+      case 'changelog':
+        return <Changelog />;
+        
       default:
         return <ModSelection />;
     }

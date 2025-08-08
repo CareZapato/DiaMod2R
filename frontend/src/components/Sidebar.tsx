@@ -184,6 +184,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => 
       enabled: isModSelected,
       description: 'Ver resumen completo de todas las modificaciones',
       subItems: []
+    },
+    {
+      id: 'changelog',
+      label: 'Changelog',
+      icon: '📝',
+      enabled: true,
+      description: 'Ver historial de versiones y cambios',
+      subItems: []
     }
   ];
 
@@ -263,7 +271,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => 
 
       <div className="sidebar-footer">
         <div className="footer-info">
-          <p>v0.2.0</p>
+          <p>v0.3.0</p>
           <p>CareZapato</p>
         </div>
       </div>
