@@ -206,10 +206,32 @@ export class ModService {
   }
 
   /**
+   * Obtiene los charStats de un mod por nombre
+   */
+  async getCharStatsByModName(modName: string): Promise<CharStat[]> {
+    const mod = await this.modRepository.findByName(modName);
+    if (!mod) {
+      return [];
+    }
+    return await this.charStatRepository.findByModId(mod.id);
+  }
+
+  /**
    * Obtiene las skills de un mod
    */
   async getSkillsByModId(modId: number): Promise<Skill[]> {
     return await this.skillRepository.findByModId(modId);
+  }
+
+  /**
+   * Obtiene las skills de un mod por nombre
+   */
+  async getSkillsByModName(modName: string): Promise<Skill[]> {
+    const mod = await this.modRepository.findByName(modName);
+    if (!mod) {
+      return [];
+    }
+    return await this.skillRepository.findByModId(mod.id);
   }
 
   /**

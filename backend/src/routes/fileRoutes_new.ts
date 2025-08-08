@@ -20,23 +20,15 @@ interface ComparisonResult {
 /**
  * Convert parsed data objects to table format for frontend
  */
-function convertToTableFormat(data: any[], fileType: string, referenceHeaders?: string[]): FileData {
+function convertToTableFormat(data: any[], fileType: string): FileData {
   if (!data || data.length === 0) {
-    if (referenceHeaders) {
-      return { headers: referenceHeaders, rows: [] };
-    }
     return { headers: [], rows: [] };
   }
 
-  // Get headers - use reference headers if provided, otherwise from first object
-  let headers: string[];
-  if (referenceHeaders) {
-    headers = referenceHeaders;
-  } else {
-    headers = Object.keys(data[0]).filter(key => key !== 'id' && key !== 'modId' && key !== 'mod');
-  }
+  // Get headers from the first object's keys
+  const headers = Object.keys(data[0]).filter(key => key !== 'id' && key !== 'modId' && key !== 'mod');
   
-  // Convert objects to row format using consistent headers
+  // Convert objects to row format
   const rows = data.map(item => {
     const row: { [key: string]: string } = {};
     headers.forEach(header => {
@@ -51,72 +43,6 @@ function convertToTableFormat(data: any[], fileType: string, referenceHeaders?: 
   });
 
   return { headers, rows };
-}
-
-/**
- * Synchronize row order between mod and base data based on a primary key
- */
-function synchronizeRowOrder(modData: FileData, baseData: FileData, primaryKey: string): { modData: FileData; baseData: FileData } {
-  if (!modData.rows.length || !baseData.rows.length) {
-    return { modData, baseData };
-  }
-
-  // Create maps for quick lookup
-  const modRowMap = new Map<string, { [key: string]: string }>();
-  const baseRowMap = new Map<string, { [key: string]: string }>();
-
-  // Index mod data by primary key
-  modData.rows.forEach(row => {
-    const key = row[primaryKey] || '';
-    if (key) {
-      modRowMap.set(key.toLowerCase(), row);
-    }
-  });
-
-  // Index base data by primary key
-  baseData.rows.forEach(row => {
-    const key = row[primaryKey] || '';
-    if (key) {
-      baseRowMap.set(key.toLowerCase(), row);
-    }
-  });
-
-  // Create synchronized rows based on base data order
-  const synchronizedModRows: { [key: string]: string }[] = [];
-  const synchronizedBaseRows: { [key: string]: string }[] = [];
-
-  baseData.rows.forEach(baseRow => {
-    const key = (baseRow[primaryKey] || '').toLowerCase();
-    
-    // Add base row
-    synchronizedBaseRows.push(baseRow);
-    
-    // Find corresponding mod row or create empty one
-    const modRow = modRowMap.get(key);
-    if (modRow) {
-      synchronizedModRows.push(modRow);
-    } else {
-      // Create empty row with same structure
-      const emptyRow: { [key: string]: string } = {};
-      modData.headers.forEach(header => {
-        emptyRow[header] = '';
-      });
-      // Set the primary key to match
-      emptyRow[primaryKey] = baseRow[primaryKey] || '';
-      synchronizedModRows.push(emptyRow);
-    }
-  });
-
-  return {
-    modData: {
-      headers: modData.headers,
-      rows: synchronizedModRows
-    },
-    baseData: {
-      headers: baseData.headers,
-      rows: synchronizedBaseRows
-    }
-  };
 }
 
 /**
@@ -187,8 +113,9 @@ router.get('/compare/:fileName', async (req, res) => {
       });
     }
 
-    // Construct base file path
-    const baseFilePath = path.join(process.cwd(), '..', 'game-base-files', `${fileName}.txt`);
+    // Construct file paths
+    const modFilePath = path.join(process.cwd(), 'mods', mod, 'data', 'global', 'excel', `${fileName}.txt`);
+    const baseFilePath = path.join(process.cwd(), 'game-base-files', `${fileName}.txt`);
 
     // Check if base file exists (required)
     const baseExists = await fsSync.existsSync(baseFilePath);
@@ -199,6 +126,9 @@ router.get('/compare/:fileName', async (req, res) => {
       });
     }
 
+    // Check if mod file exists (optional)
+    const modExists = await fsSync.existsSync(modFilePath);
+
     let modData: any[] = [];
     let baseData: any[] = [];
 
@@ -206,21 +136,22 @@ router.get('/compare/:fileName', async (req, res) => {
       // Always parse base file
       if (fileName === 'charstats') {
         baseData = await fileService.parseCharStatsFile(baseFilePath);
-        // Get mod data from database instead of file
-        modData = await modService.getCharStatsByModName(mod);
+        if (modExists) {
+          modData = await fileService.parseCharStatsFile(modFilePath);
+        }
       } else if (fileName === 'skills') {
         baseData = await fileService.parseSkillsFile(baseFilePath);
-        // Get mod data from database instead of file
-        modData = await modService.getSkillsByModName(mod);
+        if (modExists) {
+          modData = await fileService.parseSkillsFile(modFilePath);
+        }
       }
 
-      // Convert parsed data to table format for frontend with consistent headers
+      // Convert parsed data to table format for frontend
       const baseTableData = convertToTableFormat(baseData, fileName);
       let modTableData: FileData;
 
-      if (modData && modData.length > 0) {
-        // Use base headers as reference to ensure consistency
-        modTableData = convertToTableFormat(modData, fileName, baseTableData.headers);
+      if (modExists && modData.length > 0) {
+        modTableData = convertToTableFormat(modData, fileName);
       } else {
         // Create empty table structure with same headers as base
         modTableData = {
@@ -229,46 +160,12 @@ router.get('/compare/:fileName', async (req, res) => {
         };
       }
 
-      // Ensure both tables have exactly the same headers in the same order
-      if (baseTableData.headers.length !== modTableData.headers.length || 
-          !baseTableData.headers.every((header, index) => header === modTableData.headers[index])) {
-        console.log('Headers mismatch detected, synchronizing...');
-        console.log('Base headers:', baseTableData.headers);
-        console.log('Mod headers:', modTableData.headers);
-        
-        // Force mod table to use base headers
-        modTableData = convertToTableFormat(modData, fileName, baseTableData.headers);
-      }
-
-      // Synchronize row order based on primary key
-      let primaryKey: string;
-      if (fileName === 'charstats') {
-        primaryKey = 'class'; // Character class is the primary identifier
-      } else if (fileName === 'skills') {
-        primaryKey = 'skill'; // Skill name is the primary identifier
-      } else {
-        // Default to first header if no specific primary key
-        primaryKey = baseTableData.headers[0] || '';
-      }
-
-      console.log(`Synchronizing row order using primary key: ${primaryKey}`);
-      console.log(`Base rows before sync: ${baseTableData.rows.length}`);
-      console.log(`Mod rows before sync: ${modTableData.rows.length}`);
-
-      // Synchronize the row order
-      const syncResult = synchronizeRowOrder(modTableData, baseTableData, primaryKey);
-      const finalModData = syncResult.modData;
-      const finalBaseData = syncResult.baseData;
-
-      console.log(`Base rows after sync: ${finalBaseData.rows.length}`);
-      console.log(`Mod rows after sync: ${finalModData.rows.length}`);
-
-      // Calculate differences with synchronized data
-      const differences = finalModData.rows.length > 0 ? calculateDifferences(finalModData, finalBaseData) : {};
+      // Calculate differences (only if mod file exists)
+      const differences = modExists ? calculateDifferences(modTableData, baseTableData) : {};
 
       const result: ComparisonResult = {
-        modData: finalModData,
-        baseData: finalBaseData,
+        modData: modTableData,
+        baseData: baseTableData,
         differences
       };
 
@@ -278,10 +175,10 @@ router.get('/compare/:fileName', async (req, res) => {
       });
 
     } catch (parseError) {
-      console.error('Error parsing files or getting data:', parseError);
+      console.error('Error parsing files:', parseError);
       return res.status(500).json({
         success: false,
-        error: 'Failed to parse files or get database data'
+        error: 'Failed to parse files with specific parsers'
       });
     }
 
@@ -319,7 +216,7 @@ router.post('/save/:fileName', async (req, res) => {
     }
 
     // Construct file path
-    const modFilePath = path.join(process.cwd(), '..', 'mods', mod, 'data', 'global', 'excel', `${fileName}.txt`);
+    const modFilePath = path.join(process.cwd(), 'mods', mod, 'data', 'global', 'excel', `${fileName}.txt`);
 
     // Ensure directory exists
     const modDir = path.dirname(modFilePath);
@@ -363,32 +260,17 @@ router.get('/available', async (req, res) => {
       });
     }
 
-    const modPath = path.join(process.cwd(), '..', 'mods', mod, 'data', 'global', 'excel');
-    const basePath = path.join(process.cwd(), '..', 'game-base-files');
+    const modPath = path.join(process.cwd(), 'mods', mod, 'data', 'global', 'excel');
+    const basePath = path.join(process.cwd(), 'game-base-files');
 
     try {
-      console.log('Reading base path:', basePath);
-      console.log('Reading mod path:', modPath);
-      
       // Get all base files that can be compared
-      const baseFiles = await fs.readdir(basePath).catch((err) => {
-        console.error('Error reading base path:', err);
-        return [];
-      });
-      console.log('Base files found:', baseFiles);
-      
+      const baseFiles = await fs.readdir(basePath).catch(() => []);
       const baseTxtFiles = baseFiles.filter(file => file.endsWith('.txt'));
-      console.log('Base txt files:', baseTxtFiles);
 
       // Check which ones also exist in the mod
-      const modFiles = await fs.readdir(modPath).catch((err) => {
-        console.error('Error reading mod path:', err);
-        return [];
-      });
-      console.log('Mod files found:', modFiles);
-      
+      const modFiles = await fs.readdir(modPath).catch(() => []);
       const modTxtFiles = modFiles.filter(file => file.endsWith('.txt'));
-      console.log('Mod txt files:', modTxtFiles);
 
       const availableFiles = baseTxtFiles.map(file => {
         const name = file.replace('.txt', '');
@@ -401,8 +283,6 @@ router.get('/available', async (req, res) => {
           baseExists: true
         };
       });
-
-      console.log('Available files result:', availableFiles);
 
       // Sort files by name for better UX
       availableFiles.sort((a, b) => a.value.localeCompare(b.value));
